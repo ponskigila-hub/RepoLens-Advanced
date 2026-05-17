@@ -19,6 +19,7 @@
 - Frontend: [https://repolens-delta.vercel.app/](https://repolens-delta.vercel.app/)
 - Backend: [ibm-bob-hackaton-production.up.railway.app](https://ibm-bob-hackaton-production.up.railway.app/)
 - GitHub: [https://github.com/ponskigila-hub/IBM-BOB-Hackaton  ](https://github.com/ponskigila-hub/IBM-BOB-Hackaton/)
+(If analysis failed to catch, because it is loading the ML models. So wait around 5-10 minutes)
 
 ---
 

@@ -15,7 +15,9 @@ Kami terus berupaya membuat RepoLens AI menjadi lebih cepat, cerdas, dan interak
 ### 🎨 Pembaruan UI/UX & Visualisasi
 *   **Modernisasi Dashboard:** Perombakan total pada antarmuka pengguna (UI```
 
----
+![Next.js](https://img.shields.io/badge/Next.js-000000?style=flat-square&logo=nextdotjs&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)
+![Gemini AI](https://img.shields.io/badge/Gemini_AI-8E75C2?style=flat-square&logo=googlegemini&logoColor=white)
 
 ---
 *📅 Terakhir diperbarui: 19 Mei 2026*

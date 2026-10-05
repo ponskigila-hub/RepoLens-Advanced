@@ -1,0 +1,14 @@
+# Machine Learning Dependencies for Repository Quality Prediction
+
+# Core ML libraries
+pandas>=2.0.0
+numpy>=1.24.0
+scikit-learn>=1.3.0
+
+# XGBoost (preferred) - will fallback to RandomForest if not available
+xgboost>=2.0.0
+
+# Model serialization
+joblib>=1.3.0
+
+# Made with Bob

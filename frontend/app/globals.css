@@ -2,37 +2,42 @@
 @config "../tailwind.config.js";
 
 :root {
-  color-scheme: dark;
-  --page-bg: #050716;
-  --panel-bg: #080c1e;
-  --accent-teal: #5eead4;
-  --accent-violet: #8b5cf6;
-  --foreground: #f8fafc;
+  color-scheme: light;
+  --page-bg: #f4f1e8;
+  --panel-bg: #fffefa;
+  --panel-soft: #f8f6ef;
+  --ink: #203229;
+  --muted: #66746b;
+  --line: #e3e1d7;
+  --forest: #47734f;
+  --forest-deep: #315d42;
+  --terracotta: #bd7452;
 }
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; background: var(--page-bg); }
 body {
   min-height: 100vh;
-  color: var(--foreground);
+  overflow-x: hidden;
+  color: var(--ink);
   background:
-    radial-gradient(ellipse at 11% 5%, rgba(20, 184, 166, .07), transparent 31rem),
-    radial-gradient(ellipse at 92% 22%, rgba(99, 102, 241, .10), transparent 34rem),
+    radial-gradient(ellipse at 8% 4%, rgba(71, 115, 79, .10), transparent 31rem),
+    radial-gradient(ellipse at 94% 18%, rgba(189, 116, 82, .08), transparent 34rem),
     var(--page-bg);
   font-feature-settings: "ss01" on, "cv11" on;
 }
-::selection { background: rgba(94, 234, 212, .28); color: #fff; }
+::selection { background: rgba(71, 115, 79, .18); color: #203229; }
 
-.site-glow { pointer-events: none; position: absolute; z-index: 0; width: 38rem; height: 38rem; border-radius: 9999px; filter: blur(100px); opacity: .1; }
-.site-glow-teal { left: -24rem; top: 24rem; background: #14b8a6; }
-.site-glow-violet { right: -25rem; top: 12rem; background: #7c3aed; }
+.site-glow { pointer-events: none; position: absolute; z-index: 0; width: 38rem; height: 38rem; border-radius: 9999px; filter: blur(105px); opacity: .09; }
+.site-glow-teal { left: -24rem; top: 24rem; background: #78936b; }
+.site-glow-violet { right: -25rem; top: 12rem; background: #cf9473; }
 .analysis-progress { animation: scan-sweep 1.8s ease-in-out infinite; transform-origin: left; }
 @keyframes scan-sweep { 0% { transform: translateX(-110%) scaleX(.55); } 50% { transform: translateX(95%) scaleX(1); } 100% { transform: translateX(260%) scaleX(.55); } }
 
 ::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-track { background: #070a18; }
-::-webkit-scrollbar-thumb { background: #252b43; border: 2px solid #070a18; border-radius: 999px; }
-::-webkit-scrollbar-thumb:hover { background: #3a4565; }
+::-webkit-scrollbar-track { background: #efede5; }
+::-webkit-scrollbar-thumb { background: #c9c9bd; border: 2px solid #efede5; border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: #a9b09f; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }

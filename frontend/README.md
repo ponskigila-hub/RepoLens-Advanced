@@ -1,141 +1,69 @@
-# RepoLens AI - Frontend
+# RepoLens AI — Frontend
 
-Next.js frontend for AI-powered GitHub repository analysis.
+Responsive Next.js interface for evidence-based analysis of public GitHub repositories. The UI uses a warm paper, forest-green, and terracotta palette; scores and report details come from the API response, while the initial workspace remains an honest empty state.
 
-## Setup
+## Local setup
 
-### 1. Install Dependencies
+1. Start the FastAPI service in a terminal:
+
+   ```bash
+   cd ../backend
+   python -m venv .venv
+   . .venv/bin/activate
+   pip install -r requirements.txt
+   uvicorn main:app --reload --port 8000
+   ```
+
+2. In another terminal, configure and start Next.js:
+
+   ```bash
+   cd frontend
+   npm ci
+   cp .env.example .env.local
+   npm run dev
+   ```
+
+   The example points the Next.js server to `http://127.0.0.1:8000`.
+
+3. Open [http://localhost:3000](http://localhost:3000). The header's **API ready / API offline** indicator checks `/api/health` through the same-origin proxy.
+
+## API connection and deployment
+
+The browser sends requests to its own origin at `/api/analyze` and `/api/health`. Next.js forwards them server-to-server to FastAPI; the browser never tries to fetch `localhost:8000`, and normal use does not require cross-origin CORS configuration.
+
+For deployment, configure **`REPOLENS_API_URL`** in the frontend host's server environment to the FastAPI service origin, for example `https://your-api.example.com` (do not append `/api`). Deploy the FastAPI backend separately and ensure the frontend server can reach it. Then redeploy/restart the frontend so the route handlers receive the setting. A frontend-only deployment cannot run the Python repository analyzer.
+
+If the indicator stays offline:
+
+1. Open `https://your-frontend.example.com/api/health`; a working connection returns `{"status":"healthy", ...}`.
+2. Confirm `REPOLENS_API_URL` is set on the **frontend server**, not only in the browser or in a local shell.
+3. Confirm the URL points to a live FastAPI deployment whose `/health` endpoint responds.
+4. Check frontend and backend server logs. If calling FastAPI directly from the browser instead of using the proxy, set `CORS_ORIGINS` to the exact frontend origin on the backend.
+
+## Build
 
 ```bash
-npm install
-```
-
-### 2. Configure Environment
-
-Create a `.env.local` file:
-
-```bash
-cp .env.example .env.local
-```
-
-Edit `.env.local`:
-
-```
-NEXT_PUBLIC_API_URL=http://localhost:8000
-```
-
-For production, set this to your deployed backend URL.
-
-### 3. Run Development Server
-
-```bash
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) in your browser.
-
-## Build for Production
-
-```bash
+npm ci
 npm run build
 npm start
 ```
 
-## Project Structure
+## Main files
 
-```
-frontend/
-├── app/
-│   ├── page.tsx              # Main landing page
-│   ├── layout.tsx            # Root layout
-│   └── globals.css           # Global styles
-├── components/
-│   ├── RepoInput.tsx         # URL input component
-│   ├── AnalysisCard.tsx      # Analysis result display
-│   ├── LoadingSpinner.tsx    # Loading indicator
-│   └── SectionCard.tsx       # Reusable card component
-├── services/
-│   └── api.ts                # Backend API integration
-├── types/
-│   └── analysis.ts           # TypeScript interfaces
-└── package.json
-```
+- `app/page.tsx` — landing page, API health indicator, and scan states.
+- `app/api/analyze/route.ts` — same-origin analysis proxy.
+- `app/api/health/route.ts` — same-origin backend health proxy.
+- `services/backendProxy.ts` — server-side upstream forwarding and clear 503/504 errors.
+- `services/api.ts` — typed browser client.
+- `components/AnalysisCard.tsx` — dynamic report tabs and visualizations.
+- `components/RepoInput.tsx` — validated public GitHub URL form.
+- `components/LoadingSpinner.tsx` — accessible indeterminate scan state.
+- `types/analysis.ts` — frontend/API response contract.
 
-## Features
+## Environment variables
 
-- **Modern UI**: Built with Tailwind CSS and dark mode
-- **Responsive Design**: Works on mobile, tablet, and desktop
-- **Real-time Analysis**: Live updates during repository analysis
-- **Error Handling**: Comprehensive error messages and validation
-- **Type Safety**: Full TypeScript support
+| Variable | Where it is used | Example |
+| --- | --- | --- |
+| `REPOLENS_API_URL` | Next.js server only; FastAPI origin, no `/api` suffix | `http://127.0.0.1:8000` locally |
 
-## Deployment
-
-### Vercel (Recommended)
-
-1. Push code to GitHub
-2. Import project in Vercel
-3. Set environment variable: `NEXT_PUBLIC_API_URL`
-4. Deploy
-
-### Manual Deployment
-
-```bash
-npm run build
-```
-
-Deploy the `.next` folder to your hosting provider.
-
-## Environment Variables
-
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `NEXT_PUBLIC_API_URL` | Backend API URL | `http://localhost:8000` |
-
-## Tech Stack
-
-- **Framework**: Next.js 14
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **State Management**: React Hooks
-- **API Client**: Fetch API
-
-## Development
-
-### Code Style
-
-- Use TypeScript for type safety
-- Follow React best practices
-- Use functional components with hooks
-- Keep components small and focused
-
-### Adding New Features
-
-1. Create component in `components/`
-2. Add types in `types/`
-3. Update API service if needed
-4. Test thoroughly
-
-## Troubleshooting
-
-### Port Already in Use
-
-```bash
-# Kill process on port 3000
-npx kill-port 3000
-```
-
-### Build Errors
-
-```bash
-# Clear cache and reinstall
-rm -rf .next node_modules
-npm install
-npm run dev
-```
-
-### API Connection Issues
-
-- Check `NEXT_PUBLIC_API_URL` is correct
-- Ensure backend is running
-- Check CORS settings in backend
+Optional AI narrative settings are configured on the FastAPI service; static scanning and scores do not require an LLM key.

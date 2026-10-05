@@ -1,59 +1,35 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routes.analyze import router as analyze_router
 import uvicorn
 
-# Create FastAPI app
 app = FastAPI(
     title="RepoLens AI Backend",
-    description="AI-powered GitHub repository analyzer",
-    version="1.0.0"
+    description="Evidence-based GitHub repository static analyzer with optional LLM insights",
+    version="2.0.0",
 )
 
-# Configure CORS
+allowed_origins = [origin.strip() for origin in os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:3001").split(",") if origin.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "https://*.vercel.app",
-        "*"  # For development - restrict in production
-    ],
+    allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
 )
-
-# Include routers
 app.include_router(analyze_router, prefix="/api", tags=["analysis"])
 
 
 @app.get("/")
 async def root():
-    """Root endpoint"""
-    return {
-        "message": "RepoLens AI Backend",
-        "version": "1.0.0",
-        "status": "running",
-        "docs": "/docs"
-    }
+    return {"message": "RepoLens AI Backend", "version": "2.0.0", "status": "running", "docs": "/docs"}
 
 
 @app.get("/health")
 async def health():
-    """Health check endpoint"""
-    return {
-        "status": "healthy",
-        "service": "RepoLens AI"
-    }
+    return {"status": "healthy", "service": "RepoLens AI", "scoring": "static-v1"}
 
 
 if __name__ == "__main__":
-    uvicorn.run(
-        "main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True
-    )
-
-# Made with Bob
+    uvicorn.run("main:app", host="0.0.0.0", port=int(os.getenv("PORT", "8000")))

@@ -1,137 +1,50 @@
-# 🔍 RepoLens AI  
+# RepoLens-Advanced
 
-![RepoLens AI Cover](./assets/cover.png)
+RepoLens-Advanced is a Next.js + FastAPI tool for inspecting public GitHub repositories. The backend performs a bounded shallow clone, inventories files and build/test/deployment artifacts, computes static code metrics and evidence-backed scorecards, then optionally requests a text-only LLM review.
 
-### Turn Any GitHub Repository into Instant Intelligence
+## What changed in v2
 
-> AI + Machine Learning system that reads, understands, and evaluates entire codebases in seconds.
+- Quality, maintainability, scalability, architecture, and production-readiness scores now derive from scanned code and artifacts—not GitHub popularity, synthetic metadata, trained-model artifacts, or constant exception fallbacks.
+- Python source is analyzed with AST metrics, including function/class/import counts and cyclomatic branching. Other languages use documented syntax-pattern estimates.
+- Full repository counts include language, folder, extension, dependency, lockfile, CI, Docker, tests, license, environment template, and coverage-report signals.
+- Scanning is bounded; clone uses shallow/filter mode and a timeout. The analyzer never executes repo code.
+- LLM insight generation is optional. Static analysis works without an LLM credential, and LLM output cannot change scores.
+- Frontend dependencies use the patched Next.js 15.5.27 and Tailwind CSS 4 toolchain; the committed npm lockfile currently passes `npm audit` with zero findings.
 
----
+## Run locally
 
-## 🏆 IBM Bob Hackathon 2026 Submission
-**Theme:** Turn idea into impact faster  
-**Type:** AI Developer Productivity Tool  
-**Stack:** Next.js • FastAPI • XGBoost • GitPython • Scikit-learn
-
----
-
-## 🚀 Live Demo
-- Frontend: [https://repolens-delta.vercel.app/](https://repolens-delta.vercel.app/)
-- Backend: [ibm-bob-hackaton-production.up.railway.app](https://ibm-bob-hackaton-production.up.railway.app/)
-- GitHub: [https://github.com/ponskigila-hub/IBM-BOB-Hackaton  ](https://github.com/ponskigila-hub/IBM-BOB-Hackaton/)
-
-(If analysis failed to catch, because it is loading the ML models. So wait around 5-10 minutes)
-
----
-
-# ⚡ Problem
-
-Developers spend too much time understanding repositories:
-
-- Large unfamiliar codebases
-- Missing documentation
-- Slow onboarding
-- No quality metrics
-- Hidden architecture complexity
-
----
-
-# 💡 Solution
-
-RepoLens AI acts as an AI software architect that:
-
-- Clones GitHub repositories
-- Analyzes full code structure
-- Extracts features using ML
-- Generates human-readable insights
-- Produces quality scores
-
----
-
-# 🔥 Features
-
-## Repository Intelligence
-- Project purpose detection
-- Folder structure analysis
-- Tech stack detection
-- Key file identification
-
-## AI Explanation Engine
-- Plain English repo summary
-- Architecture breakdown
-- Onboarding guide generation
-
-## ML Scoring System
-- Overall Quality Score
-- Maintainability Score
-- Scalability Score
-- Architecture Score
-- Production Readiness Score
-
----
-
-# 🧠 Machine Learning Approach
-
-## Models
-- XGBoost Regressor
-- Random Forest Regressor
-
-## Features
-- Stars, forks
-- File & folder structure
-- Codebase size
-- Language distribution
-- Commit activity
-- README quality
-- Dependency complexity
-
----
-
-# 📂 Dataset
-
-Kaggle dataset:
-https://www.kaggle.com/datasets/donbarbos/github-repos
-
----
-
-# 🏗️ System Architecture
-
-GitHub URL  
-→ Repo Cloner (GitPython)  
-→ Feature Extraction  
-→ ML Models (XGBoost / RF)  
-→ AI Insight Generator  
-→ Frontend Dashboard  
-
----
-
-# 📊 Output
-
-## Repository Summary
-- What project does
-- Purpose & usage
-
-## Architecture
-- Structure breakdown
-- Module explanation
-
-## ML Scores
-- Quality score (0–100)
-- Maintainability
-- Scalability
-- Production readiness
-
----
-
-# 🚀 Deployment
-
-## Frontend (Vercel)
-- Root directory: frontend
-- Add environment variables
-- Deploy
-
-## Backend (Fly.io / Railway)
+### Backend
 
 ```bash
-fly launch
-fly deploy
+cd backend
+python -m venv .venv
+. .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env  # optional; configure an OpenAI-compatible endpoint for LLM text
+uvicorn main:app --reload --port 8000
+```
+
+`OPENAI_API_KEY` is optional. Set `CORS_ORIGINS` to comma-separated trusted frontend origins in deployment. Keep secrets in deployment environment variables, not in source.
+
+### Frontend
+
+```bash
+cd frontend
+npm ci
+# optional: create .env.local with NEXT_PUBLIC_API_URL=http://localhost:8000
+npm run dev
+```
+
+## API / system flow
+
+`POST /api/analyze` accepts `{"github_url":"https://github.com/owner/repo","include_llm":true}`. It returns dynamic metrics, score components and evidence, file/folder breakdowns, deterministic recommendations, and optional LLM insight status. See [backend/API_CONTRACT.md](backend/API_CONTRACT.md) for the JSON contract and [REFACTORING.md](REFACTORING.md) for a detailed architecture/data-flow and file-by-file change log.
+
+## Tests
+
+```bash
+cd backend
+pip install -r requirements-dev.txt
+python -m unittest discover -s tests -v
+```
+
+The project does not load the legacy saved ML models in the API request path; historical training code remains under `backend/ml/` but is not used for current scores.

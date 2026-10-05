@@ -13,7 +13,7 @@ export default function RepoInput({ onAnalyze, isLoading }: RepoInputProps) {
   const [error, setError] = useState('');
 
   const validateGitHubUrl = (url: string): boolean => {
-    const githubPattern = /^https?:\/\/(www\.)?github\.com\/[\w-]+\/[\w.-]+\/?$/;
+    const githubPattern = /^https:\/\/github\.com\/[\w-]+\/[\w.-]+\/?$/;
     return githubPattern.test(url);
   };
 
@@ -27,7 +27,7 @@ export default function RepoInput({ onAnalyze, isLoading }: RepoInputProps) {
     }
 
     if (!validateGitHubUrl(url)) {
-      setError('Please enter a valid GitHub repository URL (e.g., https://github.com/user/repo)');
+      setError('Use a public GitHub URL like https://github.com/user/repo');
       return;
     }
 
@@ -63,7 +63,7 @@ export default function RepoInput({ onAnalyze, isLoading }: RepoInputProps) {
             </p>
           )}
           
-          {/* Mock Data Toggle */}
+          {/* Optional LLM toggle; static scoring always runs */}
           <div className="mt-4 flex items-center gap-2">
             <input
               type="checkbox"
@@ -74,7 +74,7 @@ export default function RepoInput({ onAnalyze, isLoading }: RepoInputProps) {
               disabled={isLoading}
             />
             <label htmlFor="use-mock" className="text-sm text-gray-400 cursor-pointer">
-              🧪 Use mock data (for testing without API key)
+              Skip optional LLM insights (static scores are still computed)
             </label>
           </div>
         </div>

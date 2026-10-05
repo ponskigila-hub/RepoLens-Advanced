@@ -1,295 +1,259 @@
+from __future__ import annotations
+
+from collections import Counter
+from pathlib import Path
+from typing import Any
+from urllib.parse import urlparse
+
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, HttpUrl
-from typing import Optional, List, Dict
-import sys
-import os
+from pydantic import BaseModel, Field
+from starlette.concurrency import run_in_threadpool
 
-# Add parent directory to path for imports
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from services.repo_cloner import RepoCloner
+from services.analysis_service import AnalysisService
 from services.file_scanner import FileScanner
 from services.prompt_builder import PromptBuilder
-from services.analysis_service import AnalysisService
-from utils.cleanup import CleanupManager
+from services.repo_cloner import RepoCloner
+from services.static_analyzer import StaticAnalyzer
 
 router = APIRouter()
-
-# Initialize services
 repo_cloner = RepoCloner()
 prompt_builder = PromptBuilder()
 analysis_service = AnalysisService()
-cleanup_manager = CleanupManager()
+static_analyzer = StaticAnalyzer()
 
 
 class AnalyzeRequest(BaseModel):
-    github_url: str
-    use_mock: Optional[bool] = False
-
-
-class RepositoryOverview(BaseModel):
-    name: str
-    purpose: str
-    problem_solved: str
-    application_type: str
-    target_users: str
-    domain: str
-
-
-class CreatorInfo(BaseModel):
-    owner: str
-    maturity_level: str
-    coding_style: str
-    open_source_ready: bool
-    collaboration_ready: bool
-
-
-class TechnologyStack(BaseModel):
-    frontend: List[str]
-    backend: List[str]
-    database: List[str]
-    deployment: List[str]
-    testing: List[str]
-    other: List[str]
-
-
-class ArchitectureOverview(BaseModel):
-    pattern: str
-    description: str
-    folder_structure: str
-    data_flow: str
-    scalability: str
-
-
-class ImportantFile(BaseModel):
-    file: str
-    purpose: str
-    importance: str
-
-
-class OnboardingStep(BaseModel):
-    step: int
-    title: str
-    description: str
-
-
-class CodeQualityIssue(BaseModel):
-    type: str
-    severity: str
-    description: str
-    suggestion: str
-
-
-class SecurityIssue(BaseModel):
-    type: str
-    severity: str
-    description: str
-    recommendation: str
-
-
-class PerformanceIssue(BaseModel):
-    type: str
-    impact: str
-    description: str
-    solution: str
-
-
-class ImprovementSuggestion(BaseModel):
-    category: str
-    priority: str
-    suggestion: str
-    impact: str
-
-
-class MLScores(BaseModel):
-    overall_quality: float
-    maintainability: float
-    scalability: float
-    architecture: float
-    production_readiness: float
-
-
-class FinalSummary(BaseModel):
-    repository_quality_score: int
-    architecture_quality_score: int
-    maintainability_score: int
-    onboarding_difficulty: str
-    scalability_level: str
-    production_readiness: str
-    final_assessment: str
+    github_url: str = Field(min_length=1, max_length=500)
+    use_mock: bool = False  # Kept for backwards compatibility; scores are never mocked.
+    include_llm: bool = True
 
 
 class AnalyzeResponse(BaseModel):
     success: bool
-    repository_overview: Optional[RepositoryOverview] = None
-    creator_information: Optional[CreatorInfo] = None
-    technology_stack: Optional[TechnologyStack] = None
-    architecture_overview: Optional[ArchitectureOverview] = None
-    important_files: Optional[List[ImportantFile]] = None
-    onboarding_guide: Optional[List[OnboardingStep]] = None
-    code_quality_analysis: Optional[List[CodeQualityIssue]] = None
-    security_analysis: Optional[List[SecurityIssue]] = None
-    performance_analysis: Optional[List[PerformanceIssue]] = None
-    improvement_suggestions: Optional[List[ImprovementSuggestion]] = None
-    final_summary: Optional[FinalSummary] = None
-    ml_scores: Optional[MLScores] = None
-    error: Optional[str] = None
-    repo_info: Optional[Dict] = None
+    schema_version: str
+    repository: dict[str, Any]
+    repo_info: dict[str, Any]
+    metrics: dict[str, Any]
+    scores: dict[str, Any]
+    score_methodology: dict[str, Any]
+    file_breakdown: dict[str, Any]
+    files: list[dict[str, Any]]
+    folder_breakdown: list[dict[str, Any]]
+    insights: dict[str, Any]
+    ml_scores: dict[str, Any]
+    repository_overview: dict[str, Any]
+    creator_information: dict[str, Any]
+    technology_stack: dict[str, list[str]]
+    architecture_overview: dict[str, Any]
+    architecture_analysis: dict[str, Any]
+    important_files: list[dict[str, Any]]
+    onboarding_guide: list[dict[str, Any]]
+    code_quality_analysis: list[dict[str, Any]]
+    security_analysis: list[dict[str, Any]]
+    performance_analysis: list[dict[str, Any]]
+    improvement_suggestions: list[dict[str, Any]]
+    final_summary: dict[str, Any]
+    error: str | None = None
 
 
 @router.post("/analyze", response_model=AnalyzeResponse)
 async def analyze_repository(request: AnalyzeRequest):
-    """
-    Analyze a GitHub repository and return AI-powered insights
-    
-    Args:
-        request: AnalyzeRequest with github_url and optional use_mock flag
-        
-    Returns:
-        AnalyzeResponse with analysis results or error
-    """
-    local_path = None
-    
+    if not repo_cloner.validate_github_url(request.github_url):
+        raise HTTPException(status_code=422, detail="Provide a public GitHub repository URL in the form https://github.com/owner/repository.")
+    clone = await run_in_threadpool(repo_cloner.clone_repository, request.github_url)
+    if not clone.get("success"):
+        raise HTTPException(status_code=400, detail=clone.get("error", "Repository clone failed."))
+    local_path = clone["local_path"]
     try:
-        # Step 1: Clone repository
-        print(f"Step 1: Cloning repository: {request.github_url}")
-        clone_result = repo_cloner.clone_repository(request.github_url)
-        
-        if not clone_result['success']:
-            raise HTTPException(
-                status_code=400,
-                detail=clone_result['error']
-            )
-        
-        local_path = clone_result['local_path']
-        repo_name = clone_result['repo_name']
-        
-        # Step 2: Scan repository files
-        print(f"Step 2: Scanning repository files")
-        file_scanner = FileScanner(local_path)
-        scan_result = file_scanner.scan()
-        
-        if not scan_result['success']:
-            raise HTTPException(
-                status_code=500,
-                detail=scan_result['error']
-            )
-        
-        # Step 3: Get ML predictions first
-        print(f"Step 3: Getting ML predictions")
-        ml_results = analysis_service.get_ml_scores(scan_result)
-        
-        # Step 4: Build AI prompt with ML results
-        print(f"Step 4: Building analysis prompt with ML context")
-        prompt = prompt_builder.build_analysis_prompt(scan_result, ml_results)
-        
-        # Step 5: Get AI analysis
-        print(f"Step 5: Getting AI analysis")
-        ai_result = analysis_service.analyze(
-            prompt,
-            use_mock=bool(request.use_mock),
-            scan_result=scan_result
-        )
-        
-        if not ai_result['success']:
-            raise HTTPException(
-                status_code=500,
-                detail=ai_result['error']
-            )
-        
-        # Step 6: Format response
-        print(f"Step 6: Formatting response")
-        formatted_analysis = prompt_builder.format_comprehensive_analysis(
-            ai_result['response'],
-            scan_result,
-            repo_name
-        )
-        
-        # Prepare repository info
-        repo_info = {
-            'name': repo_name,
-            'technologies': scan_result.get('technologies', []),
-            'file_count': scan_result.get('file_count', 0),
-            'total_lines': scan_result.get('total_lines', 0),
-            'is_mock': ai_result.get('is_mock', False),
-            'ml_model_used': ai_result.get('ml_model_used', 'none')
+        scan = await run_in_threadpool(FileScanner(local_path).scan)
+        if not scan.get("success"):
+            raise HTTPException(status_code=500, detail=scan.get("error", "Repository scan failed."))
+        static = await run_in_threadpool(static_analyzer.analyze, scan)
+        owner, name = clone["owner"], clone["repository"]
+        scores = static["scores"]
+        score_values = {key: value["score"] for key, value in scores.items()}
+        insights = _build_insights(scan, static)
+        llm_state = {"status": "not_requested", "provider": None, "model": None, "text": None, "error": None}
+        if request.include_llm and not request.use_mock:
+            prompt = prompt_builder.build_static_analysis_prompt(clone["repo_name"], scan, static)
+            llm_state = await run_in_threadpool(analysis_service.generate_insights, prompt)
+        insights["llm"] = llm_state
+        files = scan.get("files", [])
+        categories = Counter(f.get("category", "other") for f in files)
+        important = [_important_file(f) for f in scan.get("important_files", [])[:30]]
+        technologies = scan.get("technologies", [])
+        source_dirs = sorted({Path(f["path"]).parts[0] for f in files if f["category"] == "source" and len(Path(f["path"]).parts) > 1})
+        layers = [name for name in source_dirs if name.lower() in StaticAnalyzer.LAYER_NAMES]
+        architecture = {
+            "architecture_type": _architecture_type(technologies, layers),
+            "architecture_explanation": f"Detected {len(source_dirs)} top-level source directories and {len(layers)} recognized layer directories: {', '.join(layers) if layers else 'none detected'}.",
+            "design_patterns": _patterns(technologies, layers),
+            "folder_structure": {"structure_quality": _score_band(score_values["architecture"]), "organization_level": f"{len(source_dirs)} source directories detected", "key_directories": source_dirs[:30], "structure_explanation": "Derived from the scanned directory tree."},
+            "code_organization": {"modularity_level": _score_band(score_values["maintainability"]), "separation_of_concerns": f"{len(layers)} recognized architectural directories detected", "reusability_score": score_values["maintainability"]},
+            "scalability": {"horizontal_scalability": "Container configuration detected" if scan["artifacts"]["has_docker"] else "No container deployment configuration detected", "vertical_scalability": "Code-level estimate only; runtime behavior is not measured", "scalability_notes": "Score uses measured modularity, architecture directories, CI/container signals, dependency footprint, and concurrency syntax."},
+            "strengths": insights["strengths"], "weaknesses": insights["risks"],
         }
-        
-        # Extract ML scores
-        ml_scores_data = ai_result.get('ml_scores', {})
-        ml_scores = None
-        if ml_scores_data:
-            ml_scores = MLScores(
-                overall_quality=ml_scores_data.get('overall_quality', 0.0),
-                maintainability=ml_scores_data.get('maintainability', 0.0),
-                scalability=ml_scores_data.get('scalability', 0.0),
-                architecture=ml_scores_data.get('architecture', 0.0),
-                production_readiness=ml_scores_data.get('production_readiness', 0.0)
-            )
-        
-        # Step 7: Cleanup
-        print(f"Step 7: Cleaning up temporary files")
-        if local_path:
-            repo_cloner.cleanup_repo(local_path)
-        
+        tech_stack = _technology_stack(technologies)
+        report_confidence = round(min(1.0, len(scan.get("source_files", [])) / max(scan.get("source_file_count", 0), 1)), 2)
+        components = scores["quality"]["components"]
+        contribution = {
+            "positive_factors": [{"factor": c["name"], "impact": "positive", "description": c["evidence"]} for c in components if c["score"] >= 70],
+            "negative_factors": [{"factor": c["name"], "impact": "needs_attention", "description": c["evidence"]} for c in components if c["score"] < 40],
+            "top_contributing_features": sorted([{"name": c["name"], "score": c["score"], "weight": c["weight"]} for c in components], key=lambda x: x["weight"], reverse=True),
+        }
+        ml_scores = {
+            "overall_quality": score_values["overall_quality"], "maintainability": score_values["maintainability"],
+            "scalability": score_values["scalability"], "architecture": score_values["architecture"],
+            "production_readiness": score_values["production_readiness"], "feature_contributions": contribution,
+            "confidence": report_confidence, "model_used": static["score_methodology"]["version"],
+        }
+        score_band = _score_band(score_values["quality"])
+        final_summary = {
+            "repository_quality_score": round(score_values["quality"]),
+            "architecture_quality_score": round(score_values["architecture"]),
+            "maintainability_score": round(score_values["maintainability"]),
+            "onboarding_difficulty": "Easy" if scan.get("file_count", 0) < 100 and scan["artifacts"]["has_readme"] else "Moderate" if scan["artifacts"]["has_readme"] else "Complex",
+            "scalability_level": _score_band(score_values["scalability"]),
+            "production_readiness": _score_band(score_values["production_readiness"]),
+            "final_assessment": f"Static analysis rates this repository {score_band.lower()} for quality using {scan['file_count']} scanned files and {scan['total_lines']} source/test lines. Scores are evidence-based heuristics and do not claim runtime or human-review validation.",
+        }
         return AnalyzeResponse(
-            success=True,
-            repository_overview=formatted_analysis.get('repository_overview'),
-            creator_information=formatted_analysis.get('creator_information'),
-            technology_stack=formatted_analysis.get('technology_stack'),
-            architecture_overview=formatted_analysis.get('architecture_overview'),
-            important_files=formatted_analysis.get('important_files'),
-            onboarding_guide=formatted_analysis.get('onboarding_guide'),
-            code_quality_analysis=formatted_analysis.get('code_quality_analysis'),
-            security_analysis=formatted_analysis.get('security_analysis'),
-            performance_analysis=formatted_analysis.get('performance_analysis'),
-            improvement_suggestions=formatted_analysis.get('improvement_suggestions'),
-            final_summary=formatted_analysis.get('final_summary'),
-            ml_scores=ml_scores,
-            repo_info=repo_info
+            success=True, schema_version="1.0", repository={"owner": owner, "name": name, "full_name": clone["repo_name"], "url": f"https://github.com/{owner}/{name}", "clone_depth": clone["clone_depth"]},
+            repo_info={"name": clone["repo_name"], "technologies": technologies, "file_count": scan["file_count"], "total_lines": scan["total_lines"], "is_mock": False, "ml_model_used": static["score_methodology"]["version"]},
+            metrics=static["metrics"], scores=scores, score_methodology=static["score_methodology"],
+            file_breakdown={"total": scan["file_count"], "by_category": dict(categories), "by_language": scan["language_breakdown"], "by_extension": scan["extension_breakdown"], "sample_limit": 1000},
+            files=files[:1000], folder_breakdown=scan["folder_breakdown"], insights=insights, ml_scores=ml_scores,
+            repository_overview={"name": clone["repo_name"], "purpose": insights["summary"], "problem_solved": "Not inferred from code alone; see README and LLM insight status.", "application_type": _application_type(technologies), "target_users": "Not determinable from static metrics alone.", "domain": "Not classified"},
+            creator_information={"owner": owner, "maturity_level": _score_band(score_values["quality"]), "coding_style": "Measured file and complexity metrics; stylistic linting is not run.", "open_source_ready": scan["artifacts"]["has_license"], "collaboration_ready": scan["artifacts"]["has_ci"] and scan["artifacts"]["has_tests"]},
+            technology_stack=tech_stack,
+            architecture_overview={"pattern": architecture["architecture_type"], "description": architecture["architecture_explanation"], "folder_structure": ", ".join(source_dirs) or "No nested source directories detected", "data_flow": "Static code review required for precise runtime data flow.", "scalability": architecture["scalability"]["scalability_notes"]},
+            architecture_analysis=architecture, important_files=important,
+            onboarding_guide=_onboarding(scan, technologies), code_quality_analysis=_quality_issues(scan, static),
+            security_analysis=_security_issues(scan, static), performance_analysis=_performance_issues(static),
+            improvement_suggestions=insights["recommendations"], final_summary=final_summary,
         )
-        
-    except HTTPException:
-        # Re-raise HTTP exceptions
-        if local_path:
-            repo_cloner.cleanup_repo(local_path)
-        raise
-        
-    except Exception as e:
-        # Cleanup on error
-        if local_path:
-            repo_cloner.cleanup_repo(local_path)
-        
-        print(f"Error during analysis: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Internal server error: {str(e)}"
-        )
+    finally:
+        repo_cloner.cleanup_repo(local_path)
 
 
-@router.get("/health")
-async def health_check():
-    """Health check endpoint"""
-    return {
-        "status": "healthy",
-        "service": "RepoLens AI Backend"
-    }
+def _build_insights(scan, static):
+    metrics, artifacts = static["metrics"], scan["artifacts"]
+    strengths, risks, recommendations = [], [], []
+    if artifacts["has_readme"]: strengths.append(f"README documentation is present ({len(scan.get('readme_content', '').splitlines())} lines scanned).")
+    if metrics["ast"]["average_cyclomatic_complexity"] is not None and metrics["ast"]["average_cyclomatic_complexity"] <= 5:
+        strengths.append(f"Measured average cyclomatic complexity is {metrics['ast']['average_cyclomatic_complexity']}.")
+    if artifacts["has_ci"]: strengths.append("A CI configuration file is present.")
+    if artifacts["has_tests"]: strengths.append(f"{scan['test_file_count']} test files were detected.")
+    if not artifacts["has_tests"]:
+        risks.append("No test files were detected in the scanned tree.")
+        recommendations.append(_suggestion("Testing", "high", "Add automated tests for core modules and expose a machine-readable coverage report.", "Improves change safety and makes coverage measurable."))
+    if not artifacts["has_ci"]:
+        risks.append("No common CI/CD workflow file was detected.")
+        recommendations.append(_suggestion("Delivery", "high", "Add CI checks for linting, tests, dependency auditing, and builds.", "Provides repeatable validation on each change."))
+    if not artifacts["has_docker"]:
+        recommendations.append(_suggestion("Deployment", "medium", "Document or add a reproducible deployment/container configuration if this application is intended for production.", "Reduces environment drift; containerization may not be necessary for every project."))
+    if not static["metrics"]["tests"]["coverage_is_measured"] and artifacts["has_tests"]:
+        risks.append("Tests exist, but no supported coverage report was found; coverage is reported as unknown.")
+        recommendations.append(_suggestion("Testing", "medium", "Publish coverage.xml, lcov.info, or a supported coverage JSON report from the test pipeline.", "Turns test presence into a measurable coverage signal."))
+    if not artifacts["has_license"]:
+        risks.append("No license file was detected.")
+        recommendations.append(_suggestion("Governance", "medium", "Add an explicit license if redistribution or external contributions are intended.", "Clarifies reuse and contribution terms."))
+    if not scan.get("dependencies", {}).get("lockfiles") and scan.get("dependencies", {}).get("count", 0):
+        risks.append("Dependencies are declared without a recognized lockfile.")
+        recommendations.append(_suggestion("Dependencies", "medium", "Commit a lockfile for application dependencies.", "Makes dependency resolution reproducible."))
+    if metrics["maintenance_signals"]["credential_literal_candidates"]:
+        risks.append(f"{len(metrics['maintenance_signals']['credential_literal_candidates'])} credential-like literal pattern(s) need manual verification; patterns are not proof of exposed secrets.")
+    if metrics["ast"]["syntax_error_files"]:
+        risks.append(f"Python AST parsing failed for {metrics['ast']['syntax_error_files']} source file(s).")
+    if not strengths: strengths.append(f"The scan identified {scan['source_file_count']} source files across {len(scan['folder_breakdown'])} folders; no additional positive signal met the reporting threshold.")
+    if not risks: risks.append("No high-signal static risk was identified by the configured checks; this is not a security audit.")
+    scores = {k: v["score"] for k, v in static["scores"].items()}
+    return {"summary": f"Scanned {scan['file_count']} repository files, {scan['source_file_count']} source files, and {scan['total_lines']} source/test lines. Detected: {', '.join(scan['technologies']) or 'no recognized technologies'}.", "strengths": strengths[:8], "risks": risks[:10], "recommendations": recommendations[:10], "llm": {}, "score_snapshot": scores, "scan_warnings": scan.get("warnings", [])}
 
 
-@router.post("/cleanup")
-async def cleanup_temp_repos():
-    """Cleanup old temporary repositories"""
-    try:
-        cleaned = cleanup_manager.cleanup_old_repos(max_age_hours=24)
-        return {
-            "success": True,
-            "cleaned_count": len(cleaned),
-            "cleaned_repos": cleaned
-        }
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Cleanup error: {str(e)}"
-        )
+def _suggestion(category, priority, suggestion, impact):
+    return {"category": category, "priority": priority, "suggestion": suggestion, "impact": impact}
 
-# Made with Bob
+
+def _important_file(item):
+    path = item.get("path", "")
+    name = Path(path).name.lower()
+    known = {"main.py": "Application/API entry point", "package.json": "JavaScript dependencies and scripts", "requirements.txt": "Python dependencies", "pyproject.toml": "Python project/build configuration", "dockerfile": "Container build instructions", "readme.md": "Project documentation", "docker-compose.yml": "Multi-container service configuration"}
+    purpose = next((v for k, v in known.items() if name == k or name.startswith(k)), f"{item.get('category', 'repository')} file ({item.get('language', 'unclassified')})")
+    return {"file": path, "purpose": purpose, "importance": "Selected from repository structure and file type; not a dependency or execution claim.", "size_bytes": item.get("size_bytes", 0), "lines": item.get("lines")}
+
+
+def _quality_issues(scan, static):
+    issues = []
+    ast_metrics = static["metrics"]["ast"]
+    if ast_metrics["maximum_cyclomatic_complexity"] and ast_metrics["maximum_cyclomatic_complexity"] > 10:
+        issues.append({"type": "High cyclomatic complexity", "severity": "medium", "description": f"Maximum measured function complexity is {ast_metrics['maximum_cyclomatic_complexity']}.", "suggestion": "Split complex functions into smaller units and add focused tests."})
+    if ast_metrics["syntax_error_files"]:
+        issues.append({"type": "Python parse failures", "severity": "high", "description": f"{ast_metrics['syntax_error_files']} Python source file(s) could not be parsed.", "suggestion": "Fix syntax errors or verify generated/vendor files are excluded."})
+    if not scan["artifacts"]["has_tests"]:
+        issues.append({"type": "No test files detected", "severity": "high", "description": "The repository scan found no test/spec-named paths.", "suggestion": "Add automated tests and a coverage report."})
+    for f in static["metrics"]["maintenance_signals"]["large_source_files_over_500_lines"][:10]:
+        issues.append({"type": "Large source file", "severity": "low", "description": f"{f['path']} contains {f['lines']} lines.", "suggestion": "Review for responsibilities that can be separated."})
+    return issues
+
+
+def _security_issues(scan, static):
+    issues = []
+    for item in static["metrics"]["maintenance_signals"]["credential_literal_candidates"]:
+        issues.append({"type": "Credential-like literal candidate", "severity": "high", "description": f"Pattern detected at {item['path']}:{item['line']}; this is a heuristic and may be a false positive.", "recommendation": "Manually verify, remove any real secret, rotate it if exposed, and use managed environment secrets."})
+    if not scan["artifacts"]["has_security_workflow"]:
+        issues.append({"type": "No security automation detected", "severity": "low", "description": "No CodeQL or Dependabot marker was found.", "recommendation": "Consider dependency and static security scanning in CI; absence is not proof of vulnerability."})
+    return issues
+
+
+def _performance_issues(static):
+    issues = []
+    for f in static["metrics"]["maintenance_signals"]["large_source_files_over_500_lines"][:10]:
+        issues.append({"type": "Large source unit", "impact": "review", "description": f"{f['path']} has {f['lines']} lines; the scan did not profile runtime behavior.", "solution": "Profile before optimizing and split modules if they carry multiple responsibilities."})
+    if not issues:
+        issues.append({"type": "Runtime performance not measured", "impact": "unknown", "description": "Static repository inspection does not execute or profile the application.", "solution": "Use representative benchmarks and production telemetry for runtime performance."})
+    return issues
+
+
+def _onboarding(scan, technologies):
+    package_managers = scan.get("dependencies", {}).get("manifests", [])
+    steps = [
+        {"step": 1, "title": "Inspect project structure", "description": f"Review {len(scan['folder_breakdown'])} measured folders and the important files list."},
+        {"step": 2, "title": "Install dependencies", "description": f"Use manifests found: {', '.join(package_managers) if package_managers else 'no supported dependency manifest detected'}."},
+        {"step": 3, "title": "Configure the environment", "description": "Review the environment template if present; never commit secret values." if scan["artifacts"]["has_env_example"] else "No environment template was detected; confirm required runtime settings with maintainers."},
+        {"step": 4, "title": "Run validation", "description": "Use the repository's test and build scripts; tests are detected." if scan["artifacts"]["has_tests"] else "Add/locate project-specific tests; no tests were detected by the scan."},
+        {"step": 5, "title": "Understand architecture", "description": f"Detected technologies: {', '.join(technologies) or 'none classified'}. Follow entrypoints, modules, and API boundaries."},
+    ]
+    return steps
+
+
+def _technology_stack(technologies):
+    groups = {"frontend": {"React", "Next.js", "Vue", "Angular", "Svelte", "Tailwind CSS", "TypeScript", "JavaScript"}, "backend": {"FastAPI", "Django", "Flask", "Express", "Fastify", "Python", "Go", "Java", "Rust"}, "database": {"PostgreSQL", "MySQL", "MongoDB", "Redis", "SQLite", "Prisma"}, "deployment": {"Docker", "Kubernetes", "Vercel", "AWS", "Nginx"}, "testing": {"Jest", "Vitest", "Playwright", "Pytest"}}
+    result = {key: [tech for tech in technologies if tech in values] for key, values in groups.items()}
+    known = set().union(*groups.values())
+    result["other"] = [tech for tech in technologies if tech not in known]
+    return result
+
+
+def _application_type(technologies):
+    if any(t in technologies for t in ("Next.js", "React", "Vue", "Angular")): return "Web application"
+    if any(t in technologies for t in ("FastAPI", "Django", "Flask", "Express", "Fastify")): return "API/service"
+    return "Software repository"
+
+
+def _architecture_type(technologies, layers):
+    labels = []
+    if any(t in technologies for t in ("Next.js", "React", "Vue", "Angular")): labels.append("component-based frontend")
+    if layers: labels.append("layered/module-oriented layout")
+    return ", ".join(labels) if labels else "No specific architecture pattern inferred from directory evidence"
+
+
+def _patterns(technologies, layers):
+    patterns = []
+    if any(t in technologies for t in ("React", "Next.js", "Vue", "Angular")): patterns.append("Component-based UI (framework detected)")
+    if layers: patterns.append("Layer separation signals: " + ", ".join(layers))
+    return patterns
+
+
+def _score_band(value):
+    return "Strong" if value >= 80 else "Moderate" if value >= 60 else "Developing" if value >= 40 else "Limited"

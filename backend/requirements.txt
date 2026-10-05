@@ -1,14 +1,6 @@
 fastapi==0.136.1
 uvicorn==0.47.0
-GitPython==3.1.50
 python-dotenv==1.2.2
 requests==2.34.2
-
 pydantic==2.13.4
 typing_extensions==4.15.0
-
-numpy
-pandas
-scikit-learn
-joblib
-xgboost

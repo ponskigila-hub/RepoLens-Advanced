@@ -1,6 +1,7 @@
 export interface AnalysisRequest {
   github_url: string;
   use_mock?: boolean;
+  include_llm?: boolean;
 }
 
 export interface RepositoryOverview {
@@ -152,8 +153,35 @@ export interface RepoInfo {
   ml_model_used?: string;
 }
 
+export interface ScoreComponent {
+  name: string;
+  score: number;
+  weight: number;
+  evidence: string;
+}
+export interface DynamicScore {
+  score: number;
+  components: ScoreComponent[];
+}
 export interface AnalysisResult {
   success: boolean;
+  schema_version?: string;
+  repository?: { owner: string; name: string; full_name: string; url: string; clone_depth: number };
+  metrics?: Record<string, any>;
+  scores?: Record<string, DynamicScore>;
+  score_methodology?: Record<string, any>;
+  file_breakdown?: Record<string, any>;
+  files?: Array<Record<string, any>>;
+  folder_breakdown?: Array<Record<string, any>>;
+  insights?: {
+    summary: string;
+    strengths: string[];
+    risks: string[];
+    recommendations: ImprovementSuggestion[];
+    score_snapshot?: Record<string, number>;
+    scan_warnings?: string[];
+    llm?: { status: string; provider?: string | null; model?: string | null; text?: string | null; error?: string | null };
+  };
   repository_overview?: RepositoryOverview;
   creator_information?: CreatorInfo;
   technology_stack?: TechnologyStack;

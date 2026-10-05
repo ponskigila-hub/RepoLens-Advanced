@@ -25,7 +25,7 @@ interface FeatureContributionCardProps {
 const FeatureContributionCard: React.FC<FeatureContributionCardProps> = ({ contributions, confidence }) => {
   const getImpactColor = (impact: string): string => {
     const lower = impact.toLowerCase();
-    if (lower === 'critical' || lower === 'high') return 'text-rose-400 bg-rose-500/20 border-rose-500/30';
+    if (lower === 'critical' || lower === 'high' || lower === 'needs_attention') return 'text-rose-400 bg-rose-500/20 border-rose-500/30';
     if (lower === 'medium') return 'text-amber-400 bg-amber-500/20 border-amber-500/30';
     return 'text-blue-400 bg-blue-500/20 border-blue-500/30';
   };
@@ -37,9 +37,9 @@ const FeatureContributionCard: React.FC<FeatureContributionCardProps> = ({ contr
   };
 
   const getConfidenceLabel = (conf: number): string => {
-    if (conf >= 0.8) return 'High Confidence';
-    if (conf >= 0.6) return 'Medium Confidence';
-    return 'Low Confidence';
+    if (conf >= 0.8) return 'High Coverage';
+    if (conf >= 0.6) return 'Medium Coverage';
+    return 'Limited Coverage';
   };
 
   return (
@@ -49,18 +49,18 @@ const FeatureContributionCard: React.FC<FeatureContributionCardProps> = ({ contr
         <h2 className="text-3xl font-bold text-white flex items-center gap-3 mb-2">
           <span className="text-4xl">🔍</span>
           <span className="bg-gradient-to-r from-indigo-400 to-pink-400 bg-clip-text text-transparent">
-            ML Feature Analysis
+            Score Evidence
           </span>
         </h2>
-        <p className="text-gray-400 text-sm">Data-driven insights from repository metrics</p>
+        <p className="text-gray-400 text-sm">Measured factors from static repository analysis</p>
       </div>
 
-      {/* Prediction Confidence */}
+      {/* Evidence Coverage */}
       <div className="mb-8 bg-black/30 rounded-xl p-6 border border-gray-800/50">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-lg font-bold text-white mb-1">Prediction Confidence</h3>
-            <p className="text-gray-400 text-sm">Based on repository feature quality</p>
+            <h3 className="text-lg font-bold text-white mb-1">Evidence Coverage</h3>
+            <p className="text-gray-400 text-sm">Based on successfully scanned source files</p>
           </div>
           <div className="text-right">
             <div className={`text-3xl font-black ${getConfidenceColor(confidence)}`}>
@@ -134,7 +134,7 @@ const FeatureContributionCard: React.FC<FeatureContributionCardProps> = ({ contr
                     <div className="flex items-center gap-3 mb-2">
                       <h4 className="text-lg font-bold text-emerald-300">{factor.factor}</h4>
                       <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getImpactColor(factor.impact)}`}>
-                        {factor.impact} impact
+                        {factor.impact === 'needs_attention' ? 'Needs attention' : `${factor.impact} signal`}
                       </span>
                     </div>
                     <p className="text-gray-300 text-sm">{factor.description}</p>
@@ -165,7 +165,7 @@ const FeatureContributionCard: React.FC<FeatureContributionCardProps> = ({ contr
                     <div className="flex items-center gap-3 mb-2">
                       <h4 className="text-lg font-bold text-rose-300">{factor.factor}</h4>
                       <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getImpactColor(factor.impact)}`}>
-                        {factor.impact} impact
+                        {factor.impact === 'needs_attention' ? 'Needs attention' : `${factor.impact} signal`}
                       </span>
                     </div>
                     <p className="text-gray-300 text-sm">{factor.description}</p>
@@ -184,30 +184,13 @@ const FeatureContributionCard: React.FC<FeatureContributionCardProps> = ({ contr
           <div>
             <h3 className="text-lg font-bold text-white mb-3">How Scores Are Calculated</h3>
             <p className="text-gray-300 text-sm leading-relaxed mb-3">
-              These scores are generated using machine learning models trained on thousands of GitHub repositories. 
-              The models analyze measurable repository metrics including:
+              Scores are calculated locally from repository files and observed engineering artifacts. They are not trained-model predictions and do not use stars, forks, or repository age.
             </p>
             <ul className="space-y-2 text-gray-300 text-sm">
-              <li className="flex items-start gap-2">
-                <span className="text-indigo-400 mt-1">•</span>
-                <span><strong>Documentation quality</strong> - README length, structure, and completeness</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-indigo-400 mt-1">•</span>
-                <span><strong>Community engagement</strong> - Stars, forks, watchers, and contributors</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-indigo-400 mt-1">•</span>
-                <span><strong>Development activity</strong> - Commit frequency and update recency</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-indigo-400 mt-1">•</span>
-                <span><strong>Project maturity</strong> - Repository age and stability indicators</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-indigo-400 mt-1">•</span>
-                <span><strong>Engineering practices</strong> - License, tests, CI/CD, and architecture</span>
-              </li>
+              <li className="flex items-start gap-2"><span className="text-indigo-400 mt-1">•</span><span><strong>Code complexity</strong> — Python AST branch counts and documented syntax estimates for other languages</span></li>
+              <li className="flex items-start gap-2"><span className="text-indigo-400 mt-1">•</span><span><strong>Tests and coverage</strong> — detected test files and measured coverage reports when present</span></li>
+              <li className="flex items-start gap-2"><span className="text-indigo-400 mt-1">•</span><span><strong>Structure and dependencies</strong> — source layout, modularity, dependency manifests, and lockfiles</span></li>
+              <li className="flex items-start gap-2"><span className="text-indigo-400 mt-1">•</span><span><strong>Delivery readiness</strong> — observed CI, Docker, license, and security workflow files</span></li>
             </ul>
           </div>
         </div>

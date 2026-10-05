@@ -1,3 +1,5 @@
+> **Legacy reference only:** This guide describes the retired ML-model scoring implementation. The current `/api/analyze` path uses evidence-based `StaticAnalyzer` scores; it does not load these models or use synthetic metadata. See [REFACTORING.md](REFACTORING.md) and [backend/API_CONTRACT.md](backend/API_CONTRACT.md) for the active design.
+
 # 🚀 Quick Start Guide - ML Integration
 
 ## Get Started in 5 Minutes

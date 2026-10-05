@@ -6,7 +6,7 @@ interface MLScoresCardProps {
   modelUsed?: string;
 }
 
-const MLScoresCard: React.FC<MLScoresCardProps> = ({ scores, modelUsed = 'ml' }) => {
+const MLScoresCard: React.FC<MLScoresCardProps> = ({ scores, modelUsed = 'static-v1' }) => {
   const getScoreColor = (score: number): string => {
     if (score >= 80) return 'text-emerald-400';
     if (score >= 60) return 'text-amber-400';
@@ -53,7 +53,7 @@ const MLScoresCard: React.FC<MLScoresCardProps> = ({ scores, modelUsed = 'ml' })
       label: 'Maintainability',
       score: scores.maintainability,
       icon: '🔧',
-      description: 'Code maintainability and update frequency'
+      description: 'Measured complexity, documentation, and testing signals'
     },
     {
       label: 'Scalability',
@@ -83,17 +83,17 @@ const MLScoresCard: React.FC<MLScoresCardProps> = ({ scores, modelUsed = 'ml' })
           <h2 className="text-3xl font-bold text-white flex items-center gap-3">
             <span className="text-4xl">🤖</span>
             <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-              ML Quality Scores
+              Repository Quality Scores
             </span>
           </h2>
           <p className="text-gray-500 text-sm mt-2 ml-1">
-            Data-driven repository intelligence powered by machine learning
+            Evidence-backed scores from static repository analysis
           </p>
         </div>
         <div className="flex items-center gap-2 bg-gray-900/80 px-4 py-2 rounded-full border border-gray-700/50 backdrop-blur-sm">
-          <div className={`w-2.5 h-2.5 rounded-full animate-pulse ${modelUsed === 'ml' ? 'bg-emerald-400' : 'bg-amber-400'}`}></div>
+          <div className={`w-2.5 h-2.5 rounded-full animate-pulse ${modelUsed === 'static-v1' ? 'bg-emerald-400' : 'bg-amber-400'}`}></div>
           <span className="text-xs text-gray-300 uppercase tracking-wider font-semibold">
-            {modelUsed === 'ml' ? 'ML Model' : modelUsed === 'heuristic' ? 'Smart Analysis' : 'Fallback'}
+            {modelUsed === 'static-v1' ? 'Static analysis' : 'Analysis status'}
           </span>
         </div>
       </div>
@@ -197,7 +197,7 @@ const MLScoresCard: React.FC<MLScoresCardProps> = ({ scores, modelUsed = 'ml' })
         <p className="text-sm text-blue-300/90 flex items-start gap-3">
           <span className="text-xl">💡</span>
           <span className="leading-relaxed">
-            These scores are generated using {modelUsed === 'ml' ? 'machine learning models trained on thousands of GitHub repositories' : 'intelligent heuristics based on repository characteristics'}.
+            These scores are generated using {modelUsed === 'ml' ? 'evidence-based static analysis of repository files, AST metrics, dependencies, tests, and delivery artifacts' : 'the configured analysis method'}.
             They provide objective, data-driven insights into repository quality and engineering practices.
           </span>
         </p>

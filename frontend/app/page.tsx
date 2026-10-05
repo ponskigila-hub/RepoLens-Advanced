@@ -5,6 +5,7 @@ import RepoInput from '@/components/RepoInput';
 import AnalysisCard from '@/components/AnalysisCard';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { AnalysisResult } from '@/types/analysis';
+import { apiService } from '@/services/api';
 
 export default function Home() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -17,23 +18,7 @@ export default function Home() {
     setResult(null);
 
     try {
-      const response = await fetch('http://localhost:8000/api/analyze', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          github_url: url,
-          use_mock: useMock,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.detail || 'Analysis failed');
-      }
-
+      const data = await apiService.analyzeRepository(url, useMock);
       setResult(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');

@@ -1,0 +1,1722 @@
+{
+  "success": true,
+  "schema_version": "1.0",
+  "repository": {
+    "owner": "ponskigila-hub",
+    "name": "RepoLens-Advanced",
+    "full_name": "ponskigila-hub/RepoLens-Advanced",
+    "url": "https://github.com/ponskigila-hub/RepoLens-Advanced",
+    "clone_depth": 1
+  },
+  "repo_info": {
+    "name": "ponskigila-hub/RepoLens-Advanced",
+    "technologies": [
+      "Docker",
+      "FastAPI",
+      "JavaScript",
+      "Next.js",
+      "Python",
+      "React",
+      "Tailwind CSS",
+      "TypeScript"
+    ],
+    "file_count": 78,
+    "total_lines": 4665,
+    "is_mock": false,
+    "ml_model_used": "static-v1"
+  },
+  "metrics": {
+    "files": {
+      "total": 78,
+      "source": 39,
+      "tests": 2,
+      "scanned_source": 39
+    },
+    "lines": {
+      "source_and_tests": 4665,
+      "source": 4558,
+      "tests": 107,
+      "comments": 145,
+      "comment_to_source_ratio": 0.032
+    },
+    "ast": {
+      "python_files_parsed": 16,
+      "syntax_error_files": 0,
+      "functions": 92,
+      "classes": 14,
+      "imports": 186,
+      "average_cyclomatic_complexity": 5.12,
+      "maximum_cyclomatic_complexity": 32,
+      "complexity_method": "Python AST branch counting; non-Python branching/function estimates from syntax patterns"
+    },
+    "tests": {
+      "files": 2,
+      "coverage_percent": null,
+      "coverage_is_measured": false
+    },
+    "dependencies": {
+      "count": 15,
+      "names": [
+        "@tailwindcss/postcss",
+        "@types/node",
+        "@types/react",
+        "@types/react-dom",
+        "fastapi",
+        "next",
+        "pydantic",
+        "python-dotenv",
+        "react",
+        "react-dom",
+        "requests",
+        "tailwindcss",
+        "typescript",
+        "typing-extensions",
+        "uvicorn"
+      ],
+      "manifests": [
+        "backend/requirements.txt",
+        "frontend/package.json"
+      ],
+      "lockfiles": [
+        "frontend/package-lock.json"
+      ]
+    },
+    "artifacts": {
+      "has_ci": false,
+      "has_docker": true,
+      "has_tests": true,
+      "has_license": false,
+      "has_readme": true,
+      "has_env_example": true,
+      "has_coverage_report": false,
+      "has_security_workflow": false
+    },
+    "maintenance_signals": {
+      "todo_markers": 2,
+      "todo_samples": [
+        {
+          "path": "backend/services/static_analyzer.py",
+          "line": 103,
+          "marker": "TODO"
+        },
+        {
+          "path": "backend/services/static_analyzer.py",
+          "line": 104,
+          "marker": "TODO"
+        }
+      ],
+      "large_source_files_over_500_lines": [],
+      "credential_literal_candidates": []
+    },
+    "language_breakdown": {
+      "CSS": 1,
+      "JavaScript": 3,
+      "Python": 18,
+      "TypeScript": 19
+    }
+  },
+  "scores": {
+    "quality": {
+      "score": 61.9,
+      "components": [
+        {
+          "name": "Cyclomatic complexity",
+          "score": 70.6,
+          "weight": 0.2,
+          "evidence": "Average cyclomatic complexity: 5.12 across 92 functions"
+        },
+        {
+          "name": "Source modularity",
+          "score": 67.0,
+          "weight": 0.2,
+          "evidence": "39 source files across measured directories"
+        },
+        {
+          "name": "Tests / measured coverage",
+          "score": 10.3,
+          "weight": 0.2,
+          "evidence": "2 test files; no coverage report present"
+        },
+        {
+          "name": "Documentation",
+          "score": 65.2,
+          "weight": 0.15,
+          "evidence": "README/documentation files and measured README length; has README=True"
+        },
+        {
+          "name": "Dependency footprint",
+          "score": 83.9,
+          "weight": 0.15,
+          "evidence": "15 declared dependencies across 2 manifests"
+        },
+        {
+          "name": "Dependency lockfile",
+          "score": 100.0,
+          "weight": 0.1,
+          "evidence": "1 lockfiles found"
+        }
+      ]
+    },
+    "maintainability": {
+      "score": 59.8,
+      "components": [
+        {
+          "name": "Cyclomatic complexity",
+          "score": 70.6,
+          "weight": 0.3,
+          "evidence": "Average cyclomatic complexity: 5.12 across 92 functions"
+        },
+        {
+          "name": "Source modularity",
+          "score": 67.0,
+          "weight": 0.25,
+          "evidence": "39 source files across measured directories"
+        },
+        {
+          "name": "Tests / measured coverage",
+          "score": 10.3,
+          "weight": 0.2,
+          "evidence": "2 test files; no coverage report present"
+        },
+        {
+          "name": "Documentation",
+          "score": 65.2,
+          "weight": 0.15,
+          "evidence": "README/documentation files and measured README length; has README=True"
+        },
+        {
+          "name": "Source-file size distribution",
+          "score": 100.0,
+          "weight": 0.1,
+          "evidence": "Share of source files at or below 500 lines"
+        }
+      ]
+    },
+    "scalability": {
+      "score": 70.5,
+      "components": [
+        {
+          "name": "Source modularity",
+          "score": 67.0,
+          "weight": 0.3,
+          "evidence": "39 source files across measured directories"
+        },
+        {
+          "name": "Layered boundaries",
+          "score": 100,
+          "weight": 0.2,
+          "evidence": "Count of recognized architectural layer directories"
+        },
+        {
+          "name": "Container deployment evidence",
+          "score": 100.0,
+          "weight": 0.15,
+          "evidence": "Docker/container file present=True"
+        },
+        {
+          "name": "Automated delivery evidence",
+          "score": 0.0,
+          "weight": 0.1,
+          "evidence": "CI configuration present=False"
+        },
+        {
+          "name": "Concurrency / async code evidence",
+          "score": 20.5,
+          "weight": 0.1,
+          "evidence": "Observed async/concurrency syntax per source file"
+        },
+        {
+          "name": "Dependency footprint",
+          "score": 83.9,
+          "weight": 0.1,
+          "evidence": "15 declared dependencies across 2 manifests"
+        },
+        {
+          "name": "Dependency lockfile",
+          "score": 100.0,
+          "weight": 0.05,
+          "evidence": "1 lockfiles found"
+        }
+      ]
+    },
+    "architecture": {
+      "score": 78.4,
+      "components": [
+        {
+          "name": "Source modularity",
+          "score": 67.0,
+          "weight": 0.25,
+          "evidence": "39 source files across measured directories"
+        },
+        {
+          "name": "Architectural layer directories",
+          "score": 100,
+          "weight": 0.25,
+          "evidence": "Count of recognized architectural layer directories"
+        },
+        {
+          "name": "Entrypoint organization",
+          "score": 33.3,
+          "weight": 0.2,
+          "evidence": "Repository entrypoint filenames detected"
+        },
+        {
+          "name": "Test separation",
+          "score": 100.0,
+          "weight": 0.15,
+          "evidence": "Tests are located in test/spec-named paths"
+        },
+        {
+          "name": "Source-file size distribution",
+          "score": 100.0,
+          "weight": 0.15,
+          "evidence": "Share of source files at or below 500 lines"
+        }
+      ]
+    },
+    "production_readiness": {
+      "score": 43.1,
+      "components": [
+        {
+          "name": "Tests / measured coverage",
+          "score": 10.3,
+          "weight": 0.15,
+          "evidence": "2 test files; no coverage report present"
+        },
+        {
+          "name": "CI/CD configuration",
+          "score": 0.0,
+          "weight": 0.2,
+          "evidence": "CI configuration present=False"
+        },
+        {
+          "name": "Container configuration",
+          "score": 100.0,
+          "weight": 0.15,
+          "evidence": "Docker/container file present=True"
+        },
+        {
+          "name": "Dependency lockfile",
+          "score": 100.0,
+          "weight": 0.1,
+          "evidence": "1 lockfiles found"
+        },
+        {
+          "name": "License file",
+          "score": 0.0,
+          "weight": 0.1,
+          "evidence": "License file present=False"
+        },
+        {
+          "name": "Environment template",
+          "score": 100.0,
+          "weight": 0.1,
+          "evidence": "Environment template present=True"
+        },
+        {
+          "name": "Security automation",
+          "score": 0.0,
+          "weight": 0.1,
+          "evidence": "Security automation present=False"
+        },
+        {
+          "name": "Documentation",
+          "score": 65.2,
+          "weight": 0.1,
+          "evidence": "README/documentation files and measured README length; has README=True"
+        }
+      ]
+    },
+    "overall_quality": {
+      "score": 61.9,
+      "components": [
+        {
+          "name": "Cyclomatic complexity",
+          "score": 70.6,
+          "weight": 0.2,
+          "evidence": "Average cyclomatic complexity: 5.12 across 92 functions"
+        },
+        {
+          "name": "Source modularity",
+          "score": 67.0,
+          "weight": 0.2,
+          "evidence": "39 source files across measured directories"
+        },
+        {
+          "name": "Tests / measured coverage",
+          "score": 10.3,
+          "weight": 0.2,
+          "evidence": "2 test files; no coverage report present"
+        },
+        {
+          "name": "Documentation",
+          "score": 65.2,
+          "weight": 0.15,
+          "evidence": "README/documentation files and measured README length; has README=True"
+        },
+        {
+          "name": "Dependency footprint",
+          "score": 83.9,
+          "weight": 0.15,
+          "evidence": "15 declared dependencies across 2 manifests"
+        },
+        {
+          "name": "Dependency lockfile",
+          "score": 100.0,
+          "weight": 0.1,
+          "evidence": "1 lockfiles found"
+        }
+      ]
+    }
+  },
+  "score_methodology": {
+    "version": "static-v1",
+    "method": "deterministic weighted scorecard computed from scanned source, AST metrics, repository structure, dependencies, tests, and delivery artifacts",
+    "score_range": [
+      0,
+      100
+    ],
+    "not_used": [
+      "repository popularity",
+      "synthetic GitHub metadata",
+      "trained model predictions",
+      "constant success fallbacks"
+    ],
+    "coverage_note": "Coverage contributes only when an actual supported coverage report is present; absent report is returned as null, not inferred."
+  },
+  "file_breakdown": {
+    "total": 78,
+    "by_category": {
+      "other": 29,
+      "documentation": 3,
+      "config": 5,
+      "source": 39,
+      "test": 2
+    },
+    "by_language": {
+      "CSS": 1,
+      "JavaScript": 3,
+      "Python": 18,
+      "TypeScript": 19
+    },
+    "by_extension": {
+      "[no extension]": 3,
+      ".md": 15,
+      ".png": 1,
+      ".example": 2,
+      ".py": 18,
+      ".txt": 3,
+      ".joblib": 8,
+      ".json": 4,
+      ".csv": 1,
+      ".ts": 3,
+      ".js": 3,
+      ".css": 1,
+      ".tsx": 16
+    },
+    "sample_limit": 1000
+  },
+  "files": [
+    {
+      "path": ".gitignore",
+      "name": ".gitignore",
+      "extension": "",
+      "category": "other",
+      "size_bytes": 681,
+      "lines": null,
+      "language": "Other"
+    },
+    {
+      "path": "DEPLOYMENT.md",
+      "name": "DEPLOYMENT.md",
+      "extension": ".md",
+      "category": "other",
+      "size_bytes": 6494,
+      "lines": null,
+      "language": "Other"
+    },
+    {
+      "path": "DEPLOYMENT_GUIDE.md",
+      "name": "DEPLOYMENT_GUIDE.md",
+      "extension": ".md",
+      "category": "other",
+      "size_bytes": 8277,
+      "lines": null,
+      "language": "Other"
+    },
+    {
+      "path": "FRONTEND_UPGRADE_PLAN.md",
+      "name": "FRONTEND_UPGRADE_PLAN.md",
+      "extension": ".md",
+      "category": "other",
+      "size_bytes": 10833,
+      "lines": null,
+      "language": "Other"
+    },
+    {
+      "path": "FUTUREPLAN.md",
+      "name": "FUTUREPLAN.md",
+      "extension": ".md",
+      "category": "other",
+      "size_bytes": 2372,
+      "lines": null,
+      "language": "Other"
+    },
+    {
+      "path": "IBM-BOB-Report",
+      "name": "IBM-BOB-Report",
+      "extension": "",
+      "category": "other",
+      "size_bytes": 2350,
+      "lines": null,
+      "language": "Other"
+    },
+    {
+      "path": "ML_INTEGRATION_GUIDE.md",
+      "name": "ML_INTEGRATION_GUIDE.md",
+      "extension": ".md",
+      "category": "other",
+      "size_bytes": 10141,
+      "lines": null,
+      "language": "Other"
+    },
+    {
+      "path": "ML_INTEGRATION_README.md",
+      "name": "ML_INTEGRATION_README.md",
+      "extension": ".md",
+      "category": "other",
+      "size_bytes": 8644,
+      "lines": null,
+      "language": "Other"
+    },
+    {
+      "path": "QUICKSTART.md",
+      "name": "QUICKSTART.md",
+      "extension": ".md",
+      "category": "other",
+      "size_bytes": 3478,
+      "lines": null,
+      "language": "Other"
+    },
+    {
+      "path": "QUICK_START_ML.md",
+      "name": "QUICK_START_ML.md",
+      "extension": ".md",
+      "category": "other",
+      "size_bytes": 2822,
+      "lines": null,
+      "language": "Other"
+    },
+    {
+      "path": "README.md",
+      "name": "README.md",
+      "extension": ".md",
+      "category": "documentation",
+      "size_bytes": 2392,
+      "lines": 48,
+      "language": "Other"
+    },
+    {
+      "path": "REFACTORING.md",
+      "name": "REFACTORING.md",
+      "extension": ".md",
+      "category": "other",
+      "size_bytes": 6949,
+      "lines": null,
+      "language": "Other"
+    },
+    {
+      "path": "SETUP_AND_RUN.md",
+      "name": "SETUP_AND_RUN.md",
+      "extension": ".md",
+      "category": "other",
+      "size_bytes": 8424,
+      "lines": null,
+      "language": "Other"
+    },
+    {
+      "path": "TROUBLESHOOTING.md",
+      "name": "TROUBLESHOOTING.md",
+      "extension": ".md",
+      "category": "other",
+      "size_bytes": 7385,
+      "lines": null,
+      "language": "Other"
+    },
+    {
+      "path": "assets/cover.png",
+      "name": "cover.png",
+      "extension": ".png",
+      "category": "other",
+      "size_bytes": 1791818,
+      "lines": null,
+      "language": "Other"
+    },
+    {
+      "path": "backend/.env.example",
+      "name": ".env.example",
+      "extension": ".example",
+      "category": "config",
+      "size_bytes": 372,
+      "lines": 10,
+      "language": "Other"
+    },
+    {
+      "path": "backend/API_CONTRACT.md",
+      "name": "API_CONTRACT.md",
+      "extension": ".md",
+      "category": "other",
+      "size_bytes": 3577,
+      "lines": null,
+      "language": "Other"
+    },
+    {
+      "path": "backend/Dockerfile",
+      "name": "Dockerfile",
+      "extension": "",
+      "category": "other",
+      "size_bytes": 375,
+      "lines": null,
+      "language": "Other"
+    },
+    {
+      "path": "backend/README.md",
+      "name": "README.md",
+      "extension": ".md",
+      "category": "documentation",
+      "size_bytes": 3121,
+      "lines": 136,
+      "language": "Other"
+    },
+    {
+      "path": "backend/main.py",
+      "name": "main.py",
+      "extension": ".py",
+      "category": "source",
+      "size_bytes": 1121,
+      "lines": 35,
+      "language": "Python"
+    },
+    {
+      "path": "backend/requirements-ml.txt",
+      "name": "requirements-ml.txt",
+      "extension": ".txt",
+      "category": "other",
+      "size_bytes": 275,
+      "lines": null,
+      "language": "Other"
+    },
+    {
+      "path": "backend/requirements.txt",
+      "name": "requirements.txt",
+      "extension": ".txt",
+      "category": "config",
+      "size_bytes": 114,
+      "lines": 6,
+      "language": "Other"
+    },
+    {
+      "path": "backend/runtime.txt",
+      "name": "runtime.txt",
+      "extension": ".txt",
+      "category": "other",
+      "size_bytes": 14,
+      "lines": null,
+      "language": "Other"
+    },
+    {
+      "path": "backend/test_ml_integration.py",
+      "name": "test_ml_integration.py",
+      "extension": ".py",
+      "category": "test",
+      "size_bytes": 366,
+      "lines": 8,
+      "language": "Python"
+    },
+    {
+      "path": "backend/backend/ml/models/architecture_score_model.joblib",
+      "name": "architecture_score_model.joblib",
+      "extension": ".joblib",
+      "category": "other",
+      "size_bytes": 255626,
+      "lines": null,
+      "language": "Other"
+    },
+    {
+      "path": "backend/backend/ml/models/feature_names.joblib",
+      "name": "feature_names.joblib",
+      "extension": ".joblib",
+      "category": "other",
+      "size_bytes": 444,
+      "lines": null,
+      "language": "Other"
+    },
+    {
+      "path": "backend/backend/ml/models/feature_scaler.joblib",
+      "name": "feature_scaler.joblib",
+      "extension": ".joblib",
+      "category": "other",
+      "size_bytes": 1967,
+      "lines": null,
+      "language": "Other"
+    },
+    {
+      "path": "backend/backend/ml/models/maintainability_score_model.joblib",
+      "name": "maintainability_score_model.joblib",
+      "extension": ".joblib",
+      "category": "other",
+      "size_bytes": 315598,
+      "lines": null,
+      "language": "Other"
+    },
+    {
+      "path": "backend/backend/ml/models/overall_quality_score_model.joblib",
+      "name": "overall_quality_score_model.joblib",
+      "extension": ".joblib",
+      "category": "other",
+      "size_bytes": 402073,
+      "lines": null,
+      "language": "Other"
+    },
+    {
+      "path": "backend/backend/ml/models/production_readiness_score_model.joblib",
+      "name": "production_readiness_score_model.joblib",
+      "extension": ".joblib",
+      "category": "other",
+      "size_bytes": 341716,
+      "lines": null,
+      "language": "Other"
+    },
+    {
+      "path": "backend/backend/ml/models/scalability_score_model.joblib",
+      "name": "scalability_score_model.joblib",
+      "extension": ".joblib",
+      "category": "other",
+      "size_bytes": 352615,
+      "lines": null,
+      "language": "Other"
+    },
+    {
+      "path": "backend/backend/ml/models/training_metrics.joblib",
+      "name": "training_metrics.joblib",
+      "extension": ".joblib",
+      "category": "other",
+      "size_bytes": 726,
+      "lines": null,
+      "language": "Other"
+    },
+    {
+      "path": "backend/examples/analyze-response.example.json",
+      "name": "analyze-response.example.json",
+      "extension": ".json",
+      "category": "other",
+      "size_bytes": 47799,
+      "lines": null,
+      "language": "Other"
+    },
+    {
+      "path": "backend/ml/__init__.py",
+      "name": "__init__.py",
+      "extension": ".py",
+      "category": "source",
+      "size_bytes": 461,
+      "lines": 20,
+      "language": "Python"
+    },
+    {
+      "path": "backend/ml/dataset_loader.py",
+      "name": "dataset_loader.py",
+      "extension": ".py",
+      "category": "source",
+      "size_bytes": 6134,
+      "lines": 165,
+      "language": "Python"
+    },
+    {
+      "path": "backend/ml/feature_engineering.py",
+      "name": "feature_engineering.py",
+      "extension": ".py",
+      "category": "source",
+      "size_bytes": 7299,
+      "lines": 204,
+      "language": "Python"
+    },
+    {
+      "path": "backend/ml/label_generator.py",
+      "name": "label_generator.py",
+      "extension": ".py",
+      "category": "source",
+      "size_bytes": 9641,
+      "lines": 256,
+      "language": "Python"
+    },
+    {
+      "path": "backend/ml/ml_service.py",
+      "name": "ml_service.py",
+      "extension": ".py",
+      "category": "source",
+      "size_bytes": 2952,
+      "lines": 52,
+      "language": "Python"
+    },
+    {
+      "path": "backend/ml/model_trainer.py",
+      "name": "model_trainer.py",
+      "extension": ".py",
+      "category": "source",
+      "size_bytes": 10586,
+      "lines": 317,
+      "language": "Python"
+    },
+    {
+      "path": "backend/ml/train_models.py",
+      "name": "train_models.py",
+      "extension": ".py",
+      "category": "source",
+      "size_bytes": 1195,
+      "lines": 48,
+      "language": "Python"
+    },
+    {
+      "path": "backend/routes/analyze.py",
+      "name": "analyze.py",
+      "extension": ".py",
+      "category": "source",
+      "size_bytes": 20578,
+      "lines": 259,
+      "language": "Python"
+    },
+    {
+      "path": "backend/services/analysis_service.py",
+      "name": "analysis_service.py",
+      "extension": ".py",
+      "category": "source",
+      "size_bytes": 2387,
+      "lines": 39,
+      "language": "Python"
+    },
+    {
+      "path": "backend/services/file_scanner.py",
+      "name": "file_scanner.py",
+      "extension": ".py",
+      "category": "source",
+      "size_bytes": 13853,
+      "lines": 242,
+      "language": "Python"
+    },
+    {
+      "path": "backend/services/prompt_builder.py",
+      "name": "prompt_builder.py",
+      "extension": ".py",
+      "category": "source",
+      "size_bytes": 1490,
+      "lines": 25,
+      "language": "Python"
+    },
+    {
+      "path": "backend/services/repo_cloner.py",
+      "name": "repo_cloner.py",
+      "extension": ".py",
+      "category": "source",
+      "size_bytes": 3656,
+      "lines": 75,
+      "language": "Python"
+    },
+    {
+      "path": "backend/services/static_analyzer.py",
+      "name": "static_analyzer.py",
+      "extension": ".py",
+      "category": "source",
+      "size_bytes": 17255,
+      "lines": 241,
+      "language": "Python"
+    },
+    {
+      "path": "backend/tests/test_static_analysis.py",
+      "name": "test_static_analysis.py",
+      "extension": ".py",
+      "category": "test",
+      "size_bytes": 5093,
+      "lines": 99,
+      "language": "Python"
+    },
+    {
+      "path": "backend/utils/__init__.py",
+      "name": "__init__.py",
+      "extension": ".py",
+      "category": "source",
+      "size_bytes": 128,
+      "lines": 9,
+      "language": "Python"
+    },
+    {
+      "path": "backend/utils/cleanup.py",
+      "name": "cleanup.py",
+      "extension": ".py",
+      "category": "source",
+      "size_bytes": 2126,
+      "lines": 70,
+      "language": "Python"
+    },
+    {
+      "path": "data/repositories.csv",
+      "name": "repositories.csv",
+      "extension": ".csv",
+      "category": "other",
+      "size_bytes": 70273806,
+      "lines": null,
+      "language": "Other"
+    },
+    {
+      "path": "frontend/.env.example",
+      "name": ".env.example",
+      "extension": ".example",
+      "category": "config",
+      "size_bytes": 41,
+      "lines": 1,
+      "language": "Other"
+    },
+    {
+      "path": "frontend/README.md",
+      "name": "README.md",
+      "extension": ".md",
+      "category": "documentation",
+      "size_bytes": 2788,
+      "lines": 141,
+      "language": "Other"
+    },
+    {
+      "path": "frontend/next-env.d.ts",
+      "name": "next-env.d.ts",
+      "extension": ".ts",
+      "category": "source",
+      "size_bytes": 262,
+      "lines": 6,
+      "language": "TypeScript"
+    },
+    {
+      "path": "frontend/next.config.js",
+      "name": "next.config.js",
+      "extension": ".js",
+      "category": "source",
+      "size_bytes": 235,
+      "lines": 11,
+      "language": "JavaScript"
+    },
+    {
+      "path": "frontend/package-lock.json",
+      "name": "package-lock.json",
+      "extension": ".json",
+      "category": "other",
+      "size_bytes": 56421,
+      "lines": null,
+      "language": "Other"
+    },
+    {
+      "path": "frontend/package.json",
+      "name": "package.json",
+      "extension": ".json",
+      "category": "config",
+      "size_bytes": 560,
+      "lines": 27,
+      "language": "Other"
+    },
+    {
+      "path": "frontend/postcss.config.js",
+      "name": "postcss.config.js",
+      "extension": ".js",
+      "category": "source",
+      "size_bytes": 71,
+      "lines": 5,
+      "language": "JavaScript"
+    },
+    {
+      "path": "frontend/tailwind.config.js",
+      "name": "tailwind.config.js",
+      "extension": ".js",
+      "category": "source",
+      "size_bytes": 765,
+      "lines": 18,
+      "language": "JavaScript"
+    },
+    {
+      "path": "frontend/tsconfig.json",
+      "name": "tsconfig.json",
+      "extension": ".json",
+      "category": "config",
+      "size_bytes": 617,
+      "lines": 29,
+      "language": "Other"
+    },
+    {
+      "path": "frontend/app/globals.css",
+      "name": "globals.css",
+      "extension": ".css",
+      "category": "source",
+      "size_bytes": 626,
+      "lines": 23,
+      "language": "CSS"
+    },
+    {
+      "path": "frontend/app/layout.tsx",
+      "name": "layout.tsx",
+      "extension": ".tsx",
+      "category": "source",
+      "size_bytes": 657,
+      "lines": 25,
+      "language": "TypeScript"
+    },
+    {
+      "path": "frontend/app/page.tsx",
+      "name": "page.tsx",
+      "extension": ".tsx",
+      "category": "source",
+      "size_bytes": 7035,
+      "lines": 177,
+      "language": "TypeScript"
+    },
+    {
+      "path": "frontend/components/AnalysisCard.tsx",
+      "name": "AnalysisCard.tsx",
+      "extension": ".tsx",
+      "category": "source",
+      "size_bytes": 8709,
+      "lines": 228,
+      "language": "TypeScript"
+    },
+    {
+      "path": "frontend/components/ArchitectureVisualization.tsx",
+      "name": "ArchitectureVisualization.tsx",
+      "extension": ".tsx",
+      "category": "source",
+      "size_bytes": 9395,
+      "lines": 210,
+      "language": "TypeScript"
+    },
+    {
+      "path": "frontend/components/EngineeringSummary.tsx",
+      "name": "EngineeringSummary.tsx",
+      "extension": ".tsx",
+      "category": "source",
+      "size_bytes": 7136,
+      "lines": 163,
+      "language": "TypeScript"
+    },
+    {
+      "path": "frontend/components/FeatureContributionCard.tsx",
+      "name": "FeatureContributionCard.tsx",
+      "extension": ".tsx",
+      "category": "source",
+      "size_bytes": 9324,
+      "lines": 221,
+      "language": "TypeScript"
+    },
+    {
+      "path": "frontend/components/ImportantFilesExplorer.tsx",
+      "name": "ImportantFilesExplorer.tsx",
+      "extension": ".tsx",
+      "category": "source",
+      "size_bytes": 5721,
+      "lines": 145,
+      "language": "TypeScript"
+    },
+    {
+      "path": "frontend/components/ImprovementSuggestions.tsx",
+      "name": "ImprovementSuggestions.tsx",
+      "extension": ".tsx",
+      "category": "source",
+      "size_bytes": 7819,
+      "lines": 163,
+      "language": "TypeScript"
+    },
+    {
+      "path": "frontend/components/LoadingSpinner.tsx",
+      "name": "LoadingSpinner.tsx",
+      "extension": ".tsx",
+      "category": "source",
+      "size_bytes": 784,
+      "lines": 20,
+      "language": "TypeScript"
+    },
+    {
+      "path": "frontend/components/MLScoresCard.tsx",
+      "name": "MLScoresCard.tsx",
+      "extension": ".tsx",
+      "category": "source",
+      "size_bytes": 9061,
+      "lines": 211,
+      "language": "TypeScript"
+    },
+    {
+      "path": "frontend/components/OnboardingGuide.tsx",
+      "name": "OnboardingGuide.tsx",
+      "extension": ".tsx",
+      "category": "source",
+      "size_bytes": 4943,
+      "lines": 116,
+      "language": "TypeScript"
+    },
+    {
+      "path": "frontend/components/RepoInput.tsx",
+      "name": "RepoInput.tsx",
+      "extension": ".tsx",
+      "category": "source",
+      "size_bytes": 4717,
+      "lines": 125,
+      "language": "TypeScript"
+    },
+    {
+      "path": "frontend/components/RepositorySummary.tsx",
+      "name": "RepositorySummary.tsx",
+      "extension": ".tsx",
+      "category": "source",
+      "size_bytes": 3649,
+      "lines": 91,
+      "language": "TypeScript"
+    },
+    {
+      "path": "frontend/components/SectionCard.tsx",
+      "name": "SectionCard.tsx",
+      "extension": ".tsx",
+      "category": "source",
+      "size_bytes": 677,
+      "lines": 22,
+      "language": "TypeScript"
+    },
+    {
+      "path": "frontend/components/SecurityAnalysisPanel.tsx",
+      "name": "SecurityAnalysisPanel.tsx",
+      "extension": ".tsx",
+      "category": "source",
+      "size_bytes": 7061,
+      "lines": 160,
+      "language": "TypeScript"
+    },
+    {
+      "path": "frontend/components/TechnologyStack.tsx",
+      "name": "TechnologyStack.tsx",
+      "extension": ".tsx",
+      "category": "source",
+      "size_bytes": 4669,
+      "lines": 115,
+      "language": "TypeScript"
+    },
+    {
+      "path": "frontend/services/api.ts",
+      "name": "api.ts",
+      "extension": ".ts",
+      "category": "source",
+      "size_bytes": 1486,
+      "lines": 38,
+      "language": "TypeScript"
+    },
+    {
+      "path": "frontend/types/analysis.ts",
+      "name": "analysis.ts",
+      "extension": ".ts",
+      "category": "source",
+      "size_bytes": 4788,
+      "lines": 208,
+      "language": "TypeScript"
+    }
+  ],
+  "folder_breakdown": [
+    {
+      "path": ".",
+      "file_count": 14,
+      "source_files": 0,
+      "lines": 48,
+      "size_bytes": 81242
+    },
+    {
+      "path": "frontend/components",
+      "file_count": 14,
+      "source_files": 14,
+      "lines": 1990,
+      "size_bytes": 83665
+    },
+    {
+      "path": "backend",
+      "file_count": 9,
+      "source_files": 1,
+      "lines": 195,
+      "size_bytes": 9335
+    },
+    {
+      "path": "frontend",
+      "file_count": 9,
+      "source_files": 4,
+      "lines": 238,
+      "size_bytes": 61760
+    },
+    {
+      "path": "backend/backend/ml/models",
+      "file_count": 8,
+      "source_files": 0,
+      "lines": 0,
+      "size_bytes": 1670765
+    },
+    {
+      "path": "backend/ml",
+      "file_count": 7,
+      "source_files": 7,
+      "lines": 1062,
+      "size_bytes": 38268
+    },
+    {
+      "path": "backend/services",
+      "file_count": 5,
+      "source_files": 5,
+      "lines": 622,
+      "size_bytes": 38641
+    },
+    {
+      "path": "frontend/app",
+      "file_count": 3,
+      "source_files": 3,
+      "lines": 225,
+      "size_bytes": 8318
+    },
+    {
+      "path": "backend/utils",
+      "file_count": 2,
+      "source_files": 2,
+      "lines": 79,
+      "size_bytes": 2254
+    },
+    {
+      "path": "assets",
+      "file_count": 1,
+      "source_files": 0,
+      "lines": 0,
+      "size_bytes": 1791818
+    },
+    {
+      "path": "backend/examples",
+      "file_count": 1,
+      "source_files": 0,
+      "lines": 0,
+      "size_bytes": 47799
+    },
+    {
+      "path": "backend/routes",
+      "file_count": 1,
+      "source_files": 1,
+      "lines": 259,
+      "size_bytes": 20578
+    },
+    {
+      "path": "backend/tests",
+      "file_count": 1,
+      "source_files": 0,
+      "lines": 99,
+      "size_bytes": 5093
+    },
+    {
+      "path": "data",
+      "file_count": 1,
+      "source_files": 0,
+      "lines": 0,
+      "size_bytes": 70273806
+    },
+    {
+      "path": "frontend/services",
+      "file_count": 1,
+      "source_files": 1,
+      "lines": 38,
+      "size_bytes": 1486
+    },
+    {
+      "path": "frontend/types",
+      "file_count": 1,
+      "source_files": 1,
+      "lines": 208,
+      "size_bytes": 4788
+    }
+  ],
+  "insights": {
+    "summary": "Scanned 78 repository files, 39 source files, and 4665 source/test lines. Detected: Docker, FastAPI, JavaScript, Next.js, Python, React, Tailwind CSS, TypeScript.",
+    "strengths": [
+      "README documentation is present (48 lines scanned).",
+      "2 test files were detected."
+    ],
+    "risks": [
+      "No common CI/CD workflow file was detected.",
+      "Tests exist, but no supported coverage report was found; coverage is reported as unknown.",
+      "No license file was detected."
+    ],
+    "recommendations": [
+      {
+        "category": "Delivery",
+        "priority": "high",
+        "suggestion": "Add CI checks for linting, tests, dependency auditing, and builds.",
+        "impact": "Provides repeatable validation on each change."
+      },
+      {
+        "category": "Testing",
+        "priority": "medium",
+        "suggestion": "Publish coverage.xml or lcov.info from the test pipeline.",
+        "impact": "Turns test presence into a measurable coverage signal."
+      },
+      {
+        "category": "Governance",
+        "priority": "medium",
+        "suggestion": "Add an explicit license if redistribution or external contributions are intended.",
+        "impact": "Clarifies reuse and contribution terms."
+      }
+    ],
+    "llm": {
+      "status": "not_requested",
+      "provider": null,
+      "model": null,
+      "text": null,
+      "error": null
+    },
+    "score_snapshot": {
+      "quality": 61.9,
+      "maintainability": 59.8,
+      "scalability": 70.5,
+      "architecture": 78.4,
+      "production_readiness": 43.1,
+      "overall_quality": 61.9
+    },
+    "scan_warnings": []
+  },
+  "ml_scores": {
+    "overall_quality": 61.9,
+    "maintainability": 59.8,
+    "scalability": 70.5,
+    "architecture": 78.4,
+    "production_readiness": 43.1,
+    "feature_contributions": {
+      "positive_factors": [
+        {
+          "factor": "Cyclomatic complexity",
+          "impact": "positive",
+          "description": "Average cyclomatic complexity: 5.12 across 92 functions"
+        },
+        {
+          "factor": "Dependency footprint",
+          "impact": "positive",
+          "description": "15 declared dependencies across 2 manifests"
+        },
+        {
+          "factor": "Dependency lockfile",
+          "impact": "positive",
+          "description": "1 lockfiles found"
+        }
+      ],
+      "negative_factors": [
+        {
+          "factor": "Tests / measured coverage",
+          "impact": "needs_attention",
+          "description": "2 test files; no coverage report present"
+        }
+      ],
+      "top_contributing_features": [
+        {
+          "name": "Cyclomatic complexity",
+          "score": 70.6,
+          "weight": 0.2
+        },
+        {
+          "name": "Source modularity",
+          "score": 67.0,
+          "weight": 0.2
+        },
+        {
+          "name": "Tests / measured coverage",
+          "score": 10.3,
+          "weight": 0.2
+        },
+        {
+          "name": "Documentation",
+          "score": 65.2,
+          "weight": 0.15
+        },
+        {
+          "name": "Dependency footprint",
+          "score": 83.9,
+          "weight": 0.15
+        },
+        {
+          "name": "Dependency lockfile",
+          "score": 100.0,
+          "weight": 0.1
+        }
+      ]
+    },
+    "confidence": 1.0,
+    "model_used": "static-v1"
+  },
+  "repository_overview": {
+    "name": "ponskigila-hub/RepoLens-Advanced",
+    "purpose": "Scanned 78 repository files, 39 source files, and 4665 source/test lines. Detected: Docker, FastAPI, JavaScript, Next.js, Python, React, Tailwind CSS, TypeScript.",
+    "problem_solved": "Not inferred from code alone; see README and LLM insight status.",
+    "application_type": "Web application",
+    "target_users": "Not determinable from static metrics alone.",
+    "domain": "Not classified"
+  },
+  "creator_information": {
+    "owner": "ponskigila-hub",
+    "maturity_level": "Moderate",
+    "coding_style": "Measured file and complexity metrics; stylistic linting is not run.",
+    "open_source_ready": false,
+    "collaboration_ready": false
+  },
+  "technology_stack": {
+    "frontend": [
+      "JavaScript",
+      "Next.js",
+      "React",
+      "Tailwind CSS",
+      "TypeScript"
+    ],
+    "backend": [
+      "FastAPI",
+      "Python"
+    ],
+    "database": [],
+    "deployment": [
+      "Docker"
+    ],
+    "testing": [],
+    "other": []
+  },
+  "architecture_overview": {
+    "pattern": "component-based frontend, layered/module-oriented layout",
+    "description": "Detected 2 top-level source directories and 2 recognized layer directories: backend, frontend.",
+    "folder_structure": "backend, frontend",
+    "data_flow": "Static code review required for precise runtime data flow.",
+    "scalability": "Score uses measured modularity, architecture directories, CI/container signals, dependency footprint, and concurrency syntax."
+  },
+  "architecture_analysis": {
+    "architecture_type": "component-based frontend, layered/module-oriented layout",
+    "architecture_explanation": "Detected 2 top-level source directories and 2 recognized layer directories: backend, frontend.",
+    "design_patterns": [
+      "Component-based UI (framework detected)",
+      "Layer separation signals: backend, frontend"
+    ],
+    "folder_structure": {
+      "structure_quality": "Moderate",
+      "organization_level": "2 source directories detected",
+      "key_directories": [
+        "backend",
+        "frontend"
+      ],
+      "structure_explanation": "Derived from the scanned directory tree."
+    },
+    "code_organization": {
+      "modularity_level": "Developing",
+      "separation_of_concerns": "2 recognized architectural directories detected",
+      "reusability_score": 59.8
+    },
+    "scalability": {
+      "horizontal_scalability": "Container configuration detected",
+      "vertical_scalability": "Code-level estimate only; runtime behavior is not measured",
+      "scalability_notes": "Score uses measured modularity, architecture directories, CI/container signals, dependency footprint, and concurrency syntax."
+    },
+    "strengths": [
+      "README documentation is present (48 lines scanned).",
+      "2 test files were detected."
+    ],
+    "weaknesses": [
+      "No common CI/CD workflow file was detected.",
+      "Tests exist, but no supported coverage report was found; coverage is reported as unknown.",
+      "No license file was detected."
+    ]
+  },
+  "important_files": [
+    {
+      "file": "backend/routes/analyze.py",
+      "purpose": "source file (Python)",
+      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
+      "size_bytes": 20578,
+      "lines": 259
+    },
+    {
+      "file": "backend/services/static_analyzer.py",
+      "purpose": "source file (Python)",
+      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
+      "size_bytes": 17255,
+      "lines": 241
+    },
+    {
+      "file": "backend/services/file_scanner.py",
+      "purpose": "source file (Python)",
+      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
+      "size_bytes": 13853,
+      "lines": 242
+    },
+    {
+      "file": "backend/ml/model_trainer.py",
+      "purpose": "source file (Python)",
+      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
+      "size_bytes": 10586,
+      "lines": 317
+    },
+    {
+      "file": "backend/ml/label_generator.py",
+      "purpose": "source file (Python)",
+      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
+      "size_bytes": 9641,
+      "lines": 256
+    },
+    {
+      "file": "frontend/components/ArchitectureVisualization.tsx",
+      "purpose": "source file (TypeScript)",
+      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
+      "size_bytes": 9395,
+      "lines": 210
+    },
+    {
+      "file": "frontend/components/FeatureContributionCard.tsx",
+      "purpose": "source file (TypeScript)",
+      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
+      "size_bytes": 9324,
+      "lines": 221
+    },
+    {
+      "file": "frontend/components/MLScoresCard.tsx",
+      "purpose": "source file (TypeScript)",
+      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
+      "size_bytes": 9061,
+      "lines": 211
+    },
+    {
+      "file": "frontend/components/AnalysisCard.tsx",
+      "purpose": "source file (TypeScript)",
+      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
+      "size_bytes": 8709,
+      "lines": 228
+    },
+    {
+      "file": "frontend/components/ImprovementSuggestions.tsx",
+      "purpose": "source file (TypeScript)",
+      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
+      "size_bytes": 7819,
+      "lines": 163
+    },
+    {
+      "file": "backend/ml/feature_engineering.py",
+      "purpose": "source file (Python)",
+      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
+      "size_bytes": 7299,
+      "lines": 204
+    },
+    {
+      "file": "frontend/components/EngineeringSummary.tsx",
+      "purpose": "source file (TypeScript)",
+      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
+      "size_bytes": 7136,
+      "lines": 163
+    },
+    {
+      "file": "frontend/components/SecurityAnalysisPanel.tsx",
+      "purpose": "source file (TypeScript)",
+      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
+      "size_bytes": 7061,
+      "lines": 160
+    },
+    {
+      "file": "frontend/app/page.tsx",
+      "purpose": "source file (TypeScript)",
+      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
+      "size_bytes": 7035,
+      "lines": 177
+    },
+    {
+      "file": "backend/ml/dataset_loader.py",
+      "purpose": "source file (Python)",
+      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
+      "size_bytes": 6134,
+      "lines": 165
+    },
+    {
+      "file": "frontend/components/ImportantFilesExplorer.tsx",
+      "purpose": "source file (TypeScript)",
+      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
+      "size_bytes": 5721,
+      "lines": 145
+    },
+    {
+      "file": "backend/tests/test_static_analysis.py",
+      "purpose": "test file (Python)",
+      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
+      "size_bytes": 5093,
+      "lines": 99
+    },
+    {
+      "file": "frontend/components/OnboardingGuide.tsx",
+      "purpose": "source file (TypeScript)",
+      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
+      "size_bytes": 4943,
+      "lines": 116
+    },
+    {
+      "file": "frontend/types/analysis.ts",
+      "purpose": "source file (TypeScript)",
+      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
+      "size_bytes": 4788,
+      "lines": 208
+    },
+    {
+      "file": "frontend/components/RepoInput.tsx",
+      "purpose": "source file (TypeScript)",
+      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
+      "size_bytes": 4717,
+      "lines": 125
+    },
+    {
+      "file": "frontend/components/TechnologyStack.tsx",
+      "purpose": "source file (TypeScript)",
+      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
+      "size_bytes": 4669,
+      "lines": 115
+    },
+    {
+      "file": "backend/services/repo_cloner.py",
+      "purpose": "source file (Python)",
+      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
+      "size_bytes": 3656,
+      "lines": 75
+    },
+    {
+      "file": "frontend/components/RepositorySummary.tsx",
+      "purpose": "source file (TypeScript)",
+      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
+      "size_bytes": 3649,
+      "lines": 91
+    },
+    {
+      "file": "backend/ml/ml_service.py",
+      "purpose": "source file (Python)",
+      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
+      "size_bytes": 2952,
+      "lines": 52
+    },
+    {
+      "file": "backend/services/analysis_service.py",
+      "purpose": "source file (Python)",
+      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
+      "size_bytes": 2387,
+      "lines": 39
+    },
+    {
+      "file": "backend/utils/cleanup.py",
+      "purpose": "source file (Python)",
+      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
+      "size_bytes": 2126,
+      "lines": 70
+    },
+    {
+      "file": "backend/services/prompt_builder.py",
+      "purpose": "source file (Python)",
+      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
+      "size_bytes": 1490,
+      "lines": 25
+    },
+    {
+      "file": "frontend/services/api.ts",
+      "purpose": "source file (TypeScript)",
+      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
+      "size_bytes": 1486,
+      "lines": 38
+    },
+    {
+      "file": "backend/ml/train_models.py",
+      "purpose": "source file (Python)",
+      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
+      "size_bytes": 1195,
+      "lines": 48
+    },
+    {
+      "file": "backend/main.py",
+      "purpose": "Application/API entry point",
+      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
+      "size_bytes": 1121,
+      "lines": 35
+    }
+  ],
+  "onboarding_guide": [
+    {
+      "step": 1,
+      "title": "Inspect project structure",
+      "description": "Review 16 measured folders and the important files list."
+    },
+    {
+      "step": 2,
+      "title": "Install dependencies",
+      "description": "Use manifests found: backend/requirements.txt, frontend/package.json."
+    },
+    {
+      "step": 3,
+      "title": "Configure the environment",
+      "description": "Review the environment template if present; never commit secret values."
+    },
+    {
+      "step": 4,
+      "title": "Run validation",
+      "description": "Use the repository's test and build scripts; tests are detected."
+    },
+    {
+      "step": 5,
+      "title": "Understand architecture",
+      "description": "Detected technologies: Docker, FastAPI, JavaScript, Next.js, Python, React, Tailwind CSS, TypeScript. Follow entrypoints, modules, and API boundaries."
+    }
+  ],
+  "code_quality_analysis": [
+    {
+      "type": "High cyclomatic complexity",
+      "severity": "medium",
+      "description": "Maximum measured function complexity is 32.",
+      "suggestion": "Split complex functions into smaller units and add focused tests."
+    }
+  ],
+  "security_analysis": [
+    {
+      "type": "No security automation detected",
+      "severity": "low",
+      "description": "No CodeQL or Dependabot marker was found.",
+      "recommendation": "Consider dependency and static security scanning in CI; absence is not proof of vulnerability."
+    }
+  ],
+  "performance_analysis": [
+    {
+      "type": "Runtime performance not measured",
+      "impact": "unknown",
+      "description": "Static repository inspection does not execute or profile the application.",
+      "solution": "Use representative benchmarks and production telemetry for runtime performance."
+    }
+  ],
+  "improvement_suggestions": [
+    {
+      "category": "Delivery",
+      "priority": "high",
+      "suggestion": "Add CI checks for linting, tests, dependency auditing, and builds.",
+      "impact": "Provides repeatable validation on each change."
+    },
+    {
+      "category": "Testing",
+      "priority": "medium",
+      "suggestion": "Publish coverage.xml or lcov.info from the test pipeline.",
+      "impact": "Turns test presence into a measurable coverage signal."
+    },
+    {
+      "category": "Governance",
+      "priority": "medium",
+      "suggestion": "Add an explicit license if redistribution or external contributions are intended.",
+      "impact": "Clarifies reuse and contribution terms."
+    }
+  ],
+  "final_summary": {
+    "repository_quality_score": 62,
+    "architecture_quality_score": 78,
+    "maintainability_score": 60,
+    "onboarding_difficulty": "Easy",
+    "scalability_level": "Moderate",
+    "production_readiness": "Developing",
+    "final_assessment": "Static analysis rates this repository moderate for quality using 78 scanned files and 4665 source/test lines. Scores are evidence-based heuristics and do not claim runtime or human-review validation."
+  },
+  "error": null
+}

@@ -1,20 +1,20 @@
 export default function LoadingSpinner() {
   return (
-    <div className="flex flex-col items-center justify-center py-12">
-      <div className="relative w-16 h-16">
-        <div className="absolute top-0 left-0 w-full h-full border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
-        <div className="absolute top-2 left-2 w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin-slow"></div>
+    <section className="w-full rounded-2xl border border-teal-300/15 bg-[#070b1d]/90 p-5 shadow-[0_24px_80px_rgba(0,0,0,.32)] sm:p-7" role="status" aria-live="polite">
+      <div className="flex items-start gap-4">
+        <span className="relative mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-teal-300/20 bg-teal-300/10">
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-teal-200/25 border-t-teal-200" aria-hidden="true" />
+          <span className="absolute inset-0 animate-ping rounded-xl border border-teal-300/15" aria-hidden="true" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h2 className="font-semibold text-white">Analyzing repository</h2>
+          <p className="mt-1 text-sm leading-6 text-slate-400">Fetching the latest snapshot, measuring source signals, and assembling the report.</p>
+          <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/8" aria-label="Analysis is in progress">
+            <div className="analysis-progress h-full w-2/5 rounded-full bg-gradient-to-r from-teal-300 via-cyan-300 to-violet-400" />
+          </div>
+          <p className="mt-3 text-xs text-slate-500">Progress is indeterminate because the API does not stream per-stage updates.</p>
+        </div>
       </div>
-      <div className="mt-6 space-y-2 text-center">
-        <p className="text-lg font-semibold text-gray-200 animate-pulse">
-          Analyzing Repository...
-        </p>
-        <p className="text-sm text-gray-400">
-          This may take a few moments
-        </p>
-      </div>
-    </div>
+    </section>
   );
 }
-
-// Made with Bob

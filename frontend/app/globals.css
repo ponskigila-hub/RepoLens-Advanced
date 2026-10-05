@@ -2,22 +2,38 @@
 @config "../tailwind.config.js";
 
 :root {
-  --foreground-rgb: 255, 255, 255;
-  --background-start-rgb: 17, 24, 39;
-  --background-end-rgb: 0, 0, 0;
+  color-scheme: dark;
+  --page-bg: #050716;
+  --panel-bg: #080c1e;
+  --accent-teal: #5eead4;
+  --accent-violet: #8b5cf6;
+  --foreground: #f8fafc;
 }
 
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; background: var(--page-bg); }
 body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(to bottom, transparent, rgb(var(--background-end-rgb))) rgb(var(--background-start-rgb));
   min-height: 100vh;
+  color: var(--foreground);
+  background:
+    radial-gradient(ellipse at 11% 5%, rgba(20, 184, 166, .07), transparent 31rem),
+    radial-gradient(ellipse at 92% 22%, rgba(99, 102, 241, .10), transparent 34rem),
+    var(--page-bg);
+  font-feature-settings: "ss01" on, "cv11" on;
 }
+::selection { background: rgba(94, 234, 212, .28); color: #fff; }
 
-@utility text-balance {
-  text-wrap: balance;
+.site-glow { pointer-events: none; position: absolute; z-index: 0; width: 38rem; height: 38rem; border-radius: 9999px; filter: blur(100px); opacity: .1; }
+.site-glow-teal { left: -24rem; top: 24rem; background: #14b8a6; }
+.site-glow-violet { right: -25rem; top: 12rem; background: #7c3aed; }
+.analysis-progress { animation: scan-sweep 1.8s ease-in-out infinite; transform-origin: left; }
+@keyframes scan-sweep { 0% { transform: translateX(-110%) scaleX(.55); } 50% { transform: translateX(95%) scaleX(1); } 100% { transform: translateX(260%) scaleX(.55); } }
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: #070a18; }
+::-webkit-scrollbar-thumb { background: #252b43; border: 2px solid #070a18; border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: #3a4565; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
-
-::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-track { background: #1f2937; }
-::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: #6b7280; }

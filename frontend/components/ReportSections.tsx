@@ -8,6 +8,35 @@ import type { AnalysisResult, DynamicScore, ProjectGuide, QuickFixItem, Reposito
 const number = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? new Intl.NumberFormat().format(value) : 'Not measured';
 const scoreBand = (value?: number) => value === undefined ? 'Not available' : value >= 80 ? 'Strong signal' : value >= 60 ? 'Developing' : 'Needs attention';
 
+const LANGUAGE_COLORS: Record<string, string> = {
+  JavaScript: '#f1e05a', TypeScript: '#3178c6', Python: '#3572a5', CSS: '#563d7c', HTML: '#e34c26',
+  Go: '#00add8', Rust: '#dea584', Java: '#b07219', 'C#': '#178600', 'C/C++': '#f34b7d', C: '#555555',
+  'C++': '#f34b7d', Ruby: '#701516', PHP: '#4f5d95', Swift: '#f05138', Kotlin: '#a97bff', Scala: '#c22d40',
+  Shell: '#89e051', SQL: '#e38c00', SCSS: '#c6538c', Vue: '#41b883', Svelte: '#ff3e00',
+};
+
+function languageColor(name: string) { return LANGUAGE_COLORS[name] || '#8b948b'; }
+
+function languageStatistics(result: AnalysisResult) {
+  const counts = new Map(Object.entries(result.metrics?.language_breakdown ?? {}));
+  const bytes = new Map<string, number>();
+  const fileCounts = new Map<string, number>();
+  for (const file of result.files ?? []) {
+    if (!['source', 'test'].includes(file.category) || !file.language || file.language === 'Other') continue;
+    fileCounts.set(file.language, (fileCounts.get(file.language) ?? 0) + 1);
+    const size = typeof file.size_bytes === 'number' && Number.isFinite(file.size_bytes) ? Math.max(0, file.size_bytes) : 0;
+    bytes.set(file.language, (bytes.get(file.language) ?? 0) + size);
+  }
+  const totalBytes = [...bytes.values()].reduce((sum, size) => sum + size, 0);
+  const names = new Set([...counts.keys(), ...bytes.keys()]);
+  const items = [...names].map((name) => {
+    const size = bytes.get(name) ?? 0;
+    return { name, files: counts.get(name) ?? fileCounts.get(name) ?? 0, bytes: size, share: totalBytes > 0 ? (size / totalBytes) * 100 : null };
+  }).filter((item) => item.files > 0 || item.bytes > 0)
+    .sort((a, b) => b.bytes - a.bytes || b.files - a.files || a.name.localeCompare(b.name));
+  return { items, totalBytes };
+}
+
 function scoreFor(result: AnalysisResult, key: string): number | undefined {
   const value = result.scores?.[key]?.score;
   if (typeof value === 'number' && Number.isFinite(value)) return value;
@@ -69,6 +98,29 @@ function ScoreTile({ label, value, note }: { label: string; value?: number; note
   );
 }
 
+function QualityCircle({ value, methodology }: { value?: number; methodology: string }) {
+  const safe = value === undefined ? undefined : Math.max(0, Math.min(100, value));
+  const radius = 46;
+  const circumference = 2 * Math.PI * radius;
+  const dashOffset = circumference * (1 - (safe ?? 0) / 100);
+  return (
+    <div className="flex flex-col items-center justify-center rounded-xl border border-[#d9ddd2] bg-[#f7f8f3] p-3 text-center">
+      <div className="relative h-32 w-32">
+        <svg viewBox="0 0 112 112" className="h-full w-full" role="img" aria-label={`Quality score ${safe === undefined ? 'not available' : `${safe.toFixed(1)} out of 100`}`}>
+          <circle cx="56" cy="56" r={radius} fill="none" stroke="var(--line)" strokeWidth="8" />
+          <circle cx="56" cy="56" r={radius} fill="none" stroke="currentColor" strokeWidth="8" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={dashOffset} transform="rotate(-90 56 56)" className={tone(safe)} />
+        </svg>
+        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+          <span className={`text-2xl font-semibold tracking-tight ${tone(safe)}`}>{safe === undefined ? '—' : safe.toFixed(1)}</span>
+          <span className="mt-0.5 text-[9px] font-bold uppercase tracking-[.1em] text-[#59665d]">Quality / 100</span>
+        </div>
+      </div>
+      <p className="mt-1 text-xs font-semibold text-[#304239]">{scoreBand(safe)}</p>
+      <p className="mt-1 text-[10px] text-[#59665d]">{methodology}</p>
+    </div>
+  );
+}
+
 function formatDate(value?: string | null) {
   if (!value) return 'Not available';
   const date = new Date(value);
@@ -79,15 +131,10 @@ export function AtAGlance({ result }: { result: AnalysisResult }) {
   const project = result.repository_overview;
   const code = result.code_overview;
   const guide = result.project_guide;
-  const languages = Object.entries(result.metrics?.language_breakdown ?? {}).sort((a, b) => b[1] - a[1]);
-  const versions = new Map((guide?.language_versions ?? []).map((item) => [item.name.toLowerCase(), item.version]));
-  const frameworks = result.technology_stack?.frameworks ?? [];
   const quality = scoreFor(result, 'quality');
   const identity = result.github_metadata;
   const owner = identity?.owner?.login || result.repository?.owner;
   const ownerUrl = identity?.owner?.html_url || (owner ? `https://github.com/${encodeURIComponent(owner)}` : undefined);
-  const [showAllLanguages, setShowAllLanguages] = useState(false);
-  const displayedLanguages = showAllLanguages ? languages : languages.slice(0, 8);
 
   return (
     <div className="space-y-4">
@@ -109,28 +156,9 @@ export function AtAGlance({ result }: { result: AnalysisResult }) {
         <ul className="grid gap-2 sm:grid-cols-2">{guide.features.slice(0, 5).map((feature, index) => <li key={`${feature.source}-${index}`} className="rounded-xl border border-[#e3e1d7] bg-[#faf9f4] p-3"><p className="text-xs leading-5 text-[#304239]">{feature.text}</p><p className="mt-2 font-mono text-[9px] text-[#59665d]">Source: {feature.source}</p></li>)}</ul>
       </Panel>}
 
-      <Panel title="Languages and frameworks" note="Languages are counted by scanned source/test files; framework marks come from declared packages, not runtime verification.">
-        {languages.length ? <div className="flex flex-wrap gap-2.5">
-          {displayedLanguages.map(([name, count]) => {
-            const version = versions.get(name.toLowerCase());
-            return <div key={name} className="inline-flex items-center gap-2 rounded-xl border border-[#e3e1d7] bg-[#faf9f4] px-2.5 py-2">
-              <TechLogo name={name} />
-              <div><p className="text-xs font-semibold text-[#203229]">{name}</p><p className="text-[10px] text-[#59665d]">{number(count)} files{version ? ` · ${version}` : ''}</p></div>
-            </div>;
-          })}
-          {languages.length > 8 && <button type="button" onClick={() => setShowAllLanguages((value) => !value)} className="rounded-lg border border-[#d9ddd2] bg-[#fffefa] px-3 py-2 text-xs font-semibold text-[#315d42]">{showAllLanguages ? 'Show fewer' : `Show all ${languages.length} languages`}</button>}
-        </div> : <p className="text-sm text-[#59665d]">No recognized source languages were found in the scanned files.</p>}
-        {!!frameworks.length && <div className="mt-4 border-t border-[#e3e1d7] pt-4"><p className="mb-2 text-[10px] font-semibold uppercase tracking-[.1em] text-[#59665d]">Declared frameworks / tools</p><div className="flex flex-wrap gap-2">{frameworks.slice(0, 12).map((framework) => <span key={framework.name} title={framework.evidence.map((entry) => `${entry.manifest} · ${entry.section}`).join('; ')} className="inline-flex items-center gap-2 rounded-lg border border-[#d9ddd2] bg-[#fffefa] px-2.5 py-1.5 text-xs font-medium text-[#304239]"><TechLogo name={framework.name} small />{framework.name}</span>)}</div></div>}
-        <p className="mt-3 text-[10px] leading-4 text-[#59665d]">Technology marks identify their respective projects and do not imply endorsement. Icon licenses can vary by brand.</p>
-      </Panel>
-
       <Panel title="Repository health" note="Measured static signals. These scores do not represent a runtime test or a security certification.">
-        <div className="grid gap-3 sm:grid-cols-[minmax(140px,.7fr)_minmax(0,1.5fr)]">
-          <div className="flex flex-col justify-center rounded-xl border border-[#d9ddd2] bg-[#f7f8f3] p-4">
-            <p className="text-[10px] font-bold uppercase tracking-[.1em] text-[#59665d]">Quality</p>
-            <p className={`mt-1 text-4xl font-semibold tracking-tight ${tone(quality)}`}>{quality === undefined ? '—' : quality.toFixed(1)}</p>
-            <p className="mt-1 text-xs text-[#59665d]">{scoreBand(quality)} · {result.score_methodology?.version || result.ml_scores?.model_used || 'static score'}</p>
-          </div>
+        <div className="grid gap-3 sm:grid-cols-[8.5rem_minmax(0,1fr)]">
+          <QualityCircle value={quality} methodology={result.score_methodology?.version || result.ml_scores?.model_used || 'static score'} />
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-2">
             <ScoreTile label="Maintainability" value={scoreFor(result, 'maintainability')} note="Changeability signals" />
             <ScoreTile label="Scalability" value={scoreFor(result, 'scalability')} note="Structure and growth" />
@@ -152,17 +180,48 @@ export function AtAGlance({ result }: { result: AnalysisResult }) {
         {identity?.note && <p className="mt-2 text-[10px] leading-5 text-[#59665d]">{identity.note}</p>}
       </Panel>
 
-      <HowItWorks result={result} />
+    </div>
+  );
+}
+
+export function StackSection({ result }: { result: AnalysisResult }) {
+  const guide = result.project_guide;
+  const { items: languages, totalBytes: totalLanguageBytes } = languageStatistics(result);
+  const versions = new Map((guide?.language_versions ?? []).map((item) => [item.name.toLowerCase(), item.version]));
+  const [showAllLanguages, setShowAllLanguages] = useState(false);
+  const displayedLanguages = showAllLanguages ? languages : languages.slice(0, 8);
+  return (
+    <div className="space-y-4">
+      <Panel title="Languages and frameworks" note="GitHub-style language share is estimated from scanned source/test bytes; counts are files in the bounded inventory.">
+        {languages.length ? <div>
+          {totalLanguageBytes > 0 ? <div role="img" aria-label="Language distribution by scanned source and test byte size" className="mb-3 flex h-3 overflow-hidden rounded-full bg-[#eeece3]">
+            {languages.map((language) => <span key={language.name} title={`${language.name}: ${language.share?.toFixed(1)}%`} style={{ width: `${language.share ?? 0}%`, backgroundColor: languageColor(language.name) }} />)}
+          </div> : <p className="mb-3 text-[10px] text-[#59665d]">Byte share unavailable for this snapshot; file counts are shown instead.</p>}
+          <div className="flex flex-wrap gap-2.5">
+            {displayedLanguages.map((language) => {
+              const version = versions.get(language.name.toLowerCase());
+              return <div key={language.name} className="inline-flex items-center gap-2 rounded-xl border border-[#e3e1d7] bg-[#faf9f4] px-2.5 py-2">
+                <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: languageColor(language.name) }} aria-hidden="true" />
+                <TechLogo name={language.name} />
+                <div><p className="text-xs font-semibold text-[#203229]">{language.name}</p><p className="text-[10px] text-[#59665d]">{language.share === null ? 'Share n/a' : `${language.share.toFixed(1)}%`} · {number(language.files)} files{version ? ` · ${version}` : ''}</p></div>
+              </div>;
+            })}
+            {languages.length > 8 && <button type="button" onClick={() => setShowAllLanguages((value) => !value)} className="rounded-lg border border-[#d9ddd2] bg-[#fffefa] px-3 py-2 text-xs font-semibold text-[#315d42]">{showAllLanguages ? 'Show fewer' : `Show all ${languages.length} languages`}</button>}
+          </div>
+        </div> : <p className="text-sm text-[#59665d]">No recognized source languages were found in the scanned files.</p>}
+        <p className="mt-3 text-[10px] leading-4 text-[#59665d]">Shares are based on scanned source and test file sizes, not GitHub Linguist's exact repository statistics.</p>
+      </Panel>
+      <details className="rounded-2xl border border-[#d9ddd2] bg-[#faf9f4] p-4 sm:p-5">
+        <summary className="cursor-pointer text-sm font-semibold text-[#203229]">Setup, versions, environment, frameworks, and dependencies</summary>
+        <div className="mt-4"><GettingStartedSection result={result} /></div>
+      </details>
     </div>
   );
 }
 
 export function ArchitectureSection({ result }: { result: AnalysisResult }) {
-  const [view, setView] = useState<'map' | 'files'>('map');
   const code = result.code_overview;
-  const files = result.files ?? [];
   const folders = (result.folder_breakdown ?? []).slice().sort((a, b) => b.source_files - a.source_files || b.lines - a.lines);
-  const total = result.file_breakdown?.total ?? result.metrics?.files?.total ?? files.length;
   const stages = [
     ['Repository URL', 'Public GitHub input'],
     ['Depth-1 snapshot', 'Bounded file tree'],
@@ -182,21 +241,15 @@ export function ArchitectureSection({ result }: { result: AnalysisResult }) {
         <p className="mt-3 text-xs leading-5 text-[#59665d]">The analysis flow is grounded in RepoLens behavior; repository entry-point names and folder roles below are static candidates, not verified execution paths.</p>
       </Panel>
 
-      <div className="flex flex-wrap gap-2" role="tablist" aria-label="Architecture and files">
-        <button type="button" role="tab" aria-selected={view === 'map'} onClick={() => setView('map')} className={`rounded-lg px-3 py-2 text-xs font-semibold ${view === 'map' ? 'bg-[#315d42] text-white' : 'border border-[#d9ddd2] bg-[#fffefa] text-[#45594c]'}`}>Architecture map</button>
-        <button type="button" role="tab" aria-selected={view === 'files'} onClick={() => setView('files')} className={`rounded-lg px-3 py-2 text-xs font-semibold ${view === 'files' ? 'bg-[#315d42] text-white' : 'border border-[#d9ddd2] bg-[#fffefa] text-[#45594c]'}`}>All files · {number(total)}</button>
-      </div>
-
-      {view === 'files' ? <RepositoryFiles repositoryUrl={result.repository?.url} files={files} totalFiles={total} sampleLimit={result.file_breakdown?.sample_limit} warnings={result.insights?.scan_warnings ?? []} /> : <>
-        <Panel title="Code-first map" note={code?.limitations || 'Folder names and file paths are structural hints only.'}>
+      <Panel title="Code-first map" note={code?.limitations || 'Folder names and file paths are structural hints only.'}>
           {code?.summary && <p className="mb-4 text-sm leading-6 text-[#304239]">{compactCodeSummary(code.summary)}</p>}
           {!!code?.entrypoint_candidates?.length && <div className="mb-4"><p className="mb-2 text-[10px] font-bold uppercase tracking-[.1em] text-[#59665d]">Entry-point candidates</p><div className="flex flex-wrap gap-2">{code.entrypoint_candidates.slice(0, 20).map((path) => <code key={path} className="rounded-md border border-[#d9ddd2] bg-[#faf9f4] px-2 py-1.5 text-[10px] text-[#304239]">{path}</code>)}</div></div>}
           <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
             {folders.slice(0, 18).map((folder) => <FolderCard key={folder.path} folder={folder} />)}
             {!folders.length && <p className="text-sm text-[#59665d]">No folder aggregates were returned.</p>}
           </div>
-        </Panel>
-        <Panel title="Function and class names" note={code?.symbols.method || 'Static symbol extraction is available only for supported languages.'}>
+      </Panel>
+      <Panel title="Function and class names" note={code?.symbols.method || 'Static symbol extraction is available only for supported languages.'}>
           <p className="mb-3 text-xs text-[#59665d]">{number(code?.symbols.count)} names from {number(code?.symbols.parsed_files)} parsed source files; the symbol list is bounded.</p>
           <div className="grid gap-2 sm:grid-cols-2">
             {(code?.symbols.items ?? []).slice(0, 24).map((item, index) => <div key={`${item.path}-${item.line}-${item.name}-${index}`} className="flex min-w-0 items-center gap-2 rounded-lg border border-[#e3e1d7] bg-[#faf9f4] px-3 py-2">
@@ -205,10 +258,15 @@ export function ArchitectureSection({ result }: { result: AnalysisResult }) {
             {!(code?.symbols.items?.length) && <p className="text-sm text-[#59665d]">No supported function/class names were extracted.</p>}
           </div>
           {code?.symbols.truncated && <p className="mt-3 text-right text-[10px] text-[#59665d]">Showing a bounded sample; the scanner limit is {number(code.symbols.sample_limit)} names.</p>}
-        </Panel>
-      </>}
+      </Panel>
     </div>
   );
+}
+
+export function FilesSection({ result }: { result: AnalysisResult }) {
+  const files = result.files ?? [];
+  const total = result.file_breakdown?.total ?? result.metrics?.files?.total ?? files.length;
+  return <RepositoryFiles repositoryUrl={result.repository?.url} files={files} totalFiles={total} sampleLimit={result.file_breakdown?.sample_limit} warnings={result.insights?.scan_warnings ?? []} />;
 }
 
 function FolderCard({ folder }: { folder: RepositoryFolder }) {
@@ -255,12 +313,26 @@ export function GettingStartedSection({ result }: { result: AnalysisResult }) {
   );
 }
 
+export function QuickFixesSection({ result }: { result: AnalysisResult }) {
+  const checklist = result.quick_fix_checklist;
+  return (
+    <Panel title="Production readiness quick fixes" note={checklist?.note || 'Presence checks only; these are not a quality or safety certification.'}>
+      <div className="mb-3 flex items-baseline justify-between gap-3"><p className="text-xs text-[#45594c]">Missing root files and delivery signals</p><span className="rounded-full bg-[#edf3e9] px-2.5 py-1 text-xs font-semibold text-[#315d42]">{number(checklist?.completed ?? 0)} / {number(checklist?.total ?? 0)} present</span></div>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {(checklist?.items ?? []).map((item: QuickFixItem) => <article key={item.id} className={`rounded-xl border p-3 ${item.complete ? 'border-[#ceddce] bg-[#f6f8f2]' : 'border-[#ead8c9] bg-[#fffaf6]'}`}>
+          <div className="flex items-start gap-2.5"><input type="checkbox" checked={item.complete} readOnly aria-label={`${item.file_pattern}: ${item.status}`} className="mt-1 h-4 w-4 accent-[#47734f]" /><div className="min-w-0"><div className="flex flex-wrap items-center justify-between gap-2"><h4 className="font-mono text-xs font-semibold text-[#203229]">{item.file_pattern}</h4><span className={`rounded-full px-2 py-1 text-[9px] font-semibold uppercase ${item.complete ? 'bg-[#edf3e9] text-[#315d42]' : 'bg-[#f7eee7] text-[#854830]'}`}>{item.status}</span></div><p className="mt-2 text-xs leading-5 text-[#304239]">{item.instruction}</p><p className="mt-1 text-[10px] leading-4 text-[#59665d]">{item.evidence}</p></div></div>
+        </article>)}
+        {!checklist?.items?.length && <p className="text-sm text-[#59665d]">No checklist data was returned.</p>}
+      </div>
+    </Panel>
+  );
+}
+
 export function HotspotsAndFixes({ result }: { result: AnalysisResult }) {
   const metrics = result.metrics;
   const ast = metrics?.ast;
   const maintenance = metrics?.maintenance_signals;
   const largeFiles = maintenance?.large_source_files_over_500_lines ?? [];
-  const checklist = result.quick_fix_checklist;
   const qualityComponents = result.scores?.quality?.components ?? result.scores?.overall_quality?.components ?? [];
   const otherScoreComponents = ['maintainability', 'scalability', 'architecture', 'production_readiness']
     .flatMap((key) => (result.scores?.[key]?.components ?? []).map((component) => ({ ...component, scorecard: key })));
@@ -298,16 +370,6 @@ export function HotspotsAndFixes({ result }: { result: AnalysisResult }) {
         </Panel>
       </div>
 
-      <Panel title="Quick-fix checklist" note={checklist?.note || 'Presence checks only; these are not a quality or safety certification.'}>
-        <div className="mb-3 flex items-baseline justify-between gap-3"><p className="text-xs text-[#45594c]">Missing root files and delivery signals</p><span className="rounded-full bg-[#edf3e9] px-2.5 py-1 text-xs font-semibold text-[#315d42]">{number(checklist?.completed ?? 0)} / {number(checklist?.total ?? 0)} present</span></div>
-        <div className="grid gap-2 sm:grid-cols-2">
-          {(checklist?.items ?? []).map((item: QuickFixItem) => <article key={item.id} className={`rounded-xl border p-3 ${item.complete ? 'border-[#ceddce] bg-[#f6f8f2]' : 'border-[#ead8c9] bg-[#fffaf6]'}`}>
-            <div className="flex items-start gap-2.5"><input type="checkbox" checked={item.complete} readOnly aria-label={`${item.file_pattern}: ${item.status}`} className="mt-1 h-4 w-4 accent-[#47734f]" /><div className="min-w-0"><div className="flex flex-wrap items-center justify-between gap-2"><h4 className="font-mono text-xs font-semibold text-[#203229]">{item.file_pattern}</h4><span className={`rounded-full px-2 py-1 text-[9px] font-semibold uppercase ${item.complete ? 'bg-[#edf3e9] text-[#315d42]' : 'bg-[#f7eee7] text-[#854830]'}`}>{item.status}</span></div><p className="mt-2 text-xs leading-5 text-[#304239]">{item.instruction}</p><p className="mt-1 text-[10px] leading-4 text-[#59665d]">{item.evidence}</p></div></div>
-          </article>)}
-          {!checklist?.items?.length && <p className="text-sm text-[#59665d]">No checklist data was returned.</p>}
-        </div>
-      </Panel>
-
       {!!issues.length && <Panel title="Findings to review" note="Pattern-based findings are signals for manual review, not confirmed defects.">
         <div className="space-y-2">{issues.slice(0, 12).map((item, index) => <article key={`${item.title}-${index}`} className="rounded-xl border border-[#ead8c9] bg-[#fffaf6] p-3"><div className="flex flex-wrap items-center justify-between gap-2"><h4 className="text-xs font-semibold text-[#304239]">{item.title}</h4><span className="rounded bg-[#f7eee7] px-2 py-1 text-[9px] font-semibold uppercase text-[#854830]">{item.severity}</span></div><p className="mt-2 text-xs leading-5 text-[#45594c]">{item.description}</p>{item.action && <p className="mt-1 text-xs leading-5 text-[#304239]">Next step: {item.action}</p>}</article>)}</div>
       </Panel>}
@@ -329,11 +391,15 @@ function HowItWorks({ result }: { result: AnalysisResult }) {
     ['Render, share, and preview selectively', 'The API returns a structured JSON report. Saving explicitly stores a public-unlisted SQLite snapshot without source contents; PDF uses the browser print dialog. Selecting a file triggers a separate bounded text fetch with secret-shaped assignment redaction.'],
   ];
   return (
-    <details className="rounded-2xl border border-[#d9ddd2] bg-[#faf9f4] p-4 sm:p-5">
+    <details open className="rounded-2xl border border-[#d9ddd2] bg-[#faf9f4] p-4 sm:p-5">
       <summary className="cursor-pointer text-sm font-semibold text-[#203229]">How RepoLens works — detailed data flow</summary>
       <p className="mt-2 text-xs leading-5 text-[#59665d]">This opens the full analysis pipeline, including the checks and safety boundaries behind the report.</p>
       <ol className="mt-4 space-y-2.5">{steps.map(([title, description], index) => <li key={title} className="flex gap-3 rounded-xl border border-[#e3e1d7] bg-[#fffefa] p-3"><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#edf3e9] text-[10px] font-bold text-[#315d42]">{index + 1}</span><div><h4 className="text-xs font-semibold text-[#203229]">{title}</h4><p className="mt-1 text-[10px] leading-5 text-[#45594c]">{description}</p></div></li>)}</ol>
       <p className="mt-3 text-[10px] leading-5 text-[#59665d]">Method note: {result.score_methodology?.method || 'The score method was not included in this snapshot.'} {result.score_methodology?.coverage_note || ''}</p>
     </details>
   );
+}
+
+export function HowItWorksSection({ result }: { result: AnalysisResult }) {
+  return <HowItWorks result={result} />;
 }

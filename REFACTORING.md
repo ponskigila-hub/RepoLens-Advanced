@@ -125,3 +125,10 @@ The traceback showed `StaticAnalyzer._signals()` indexing `Path(".").parts[-1]`.
 - `frontend/app/globals.css` layers sage, linen, terracotta, and muted ochre gradients into the page backdrop and existing surfaces, with dark-theme equivalents and reduced-motion-aware surface transitions. Heading wrapping and default line spacing were adjusted for easier scanning.
 - `frontend/components/AnalysisCard.tsx` adds a restrained paper gradient to the report surface and a forest gradient to the selected report tab; no report sections or layout order changed.
 - Production build passed. The updated landing page was checked in light and dark modes; the final live report was checked in light mode. The status pill is absent from the rendered header.
+
+## Follow-up: report navigation and language composition
+
+- `frontend/components/AnalysisCard.tsx` now uses the screenshot's two-column report workspace: seven focused navigation items in a left rail on wide screens, with a horizontally scrollable tab row on small screens. Overview, Code map, Stack, Files, Quick fixes, Findings, and How it works each render a distinct section. Active and hover states use higher-contrast forest/sage gradients, with dark-theme equivalents.
+- `frontend/components/ReportSections.tsx` renders the Quality score as an accessible circular SVG gauge. Language composition uses the scanned source/test file byte sizes to create a GitHub-style segmented bar and logo-backed percentage labels alongside file counts; the UI explicitly notes this is an estimate, not GitHub Linguist's exact output.
+- The Stack tab keeps setup commands, runtime versions, environment names, frameworks, and dependency details available in an expandable panel to keep the first view focused. The How it works tab opens the full six-step explanation directly.
+- Validation: optimized Next.js production build passed; a live `FireClow/SuruAhai` report showed the seven-tab sidebar, active-state gradient, circular Quality score, language logos/percentages, separate Quick fixes, and expanded methodology. `git diff --check` passed. No commit or push was made.

@@ -3,19 +3,22 @@
 import { useState } from 'react';
 import { apiService } from '@/services/api';
 import type { AnalysisResult, SavedReport } from '@/types/analysis';
-import { AtAGlance, ArchitectureSection, GettingStartedSection, HotspotsAndFixes } from '@/components/ReportSections';
+import { AtAGlance, ArchitectureSection, FilesSection, HowItWorksSection, HotspotsAndFixes, QuickFixesSection, StackSection } from '@/components/ReportSections';
 
-type Tab = 'glance' | 'architecture' | 'getting-started' | 'hotspots';
-const tabs: Array<{ id: Tab; label: string; description: string }> = [
-  { id: 'glance', label: 'At a Glance', description: 'Purpose, stack, and health' },
-  { id: 'architecture', label: 'Architecture & Flow', description: 'Folders, entry points, and files' },
-  { id: 'getting-started', label: 'Getting Started', description: 'Commands, versions, and config' },
-  { id: 'hotspots', label: 'Hotspots & Fixes', description: 'Metrics, checklist, and findings' },
+type Tab = 'overview' | 'code-map' | 'stack' | 'files' | 'quick-fixes' | 'findings' | 'how-it-works';
+const tabs: Array<{ id: Tab; label: string }> = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'code-map', label: 'Code map' },
+  { id: 'stack', label: 'Stack' },
+  { id: 'files', label: 'Files' },
+  { id: 'quick-fixes', label: 'Quick fixes' },
+  { id: 'findings', label: 'Findings' },
+  { id: 'how-it-works', label: 'How it works' },
 ];
 const formatNumber = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? new Intl.NumberFormat().format(value) : 'Not measured';
 
 export default function AnalysisCard({ result, allowSave = true }: { result: AnalysisResult; allowSave?: boolean }) {
-  const [activeTab, setActiveTab] = useState<Tab>('glance');
+  const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [savedReport, setSavedReport] = useState<SavedReport | null>(null);
   const [shareLinks, setShareLinks] = useState<{ report: string; badge: string; markdown: string } | null>(null);
   const [saving, setSaving] = useState(false);
@@ -84,19 +87,29 @@ export default function AnalysisCard({ result, allowSave = true }: { result: Ana
       </div>}
       {shareError && !shareLinks && <p role="alert" className="print-hide border-b border-[#e8c9bd] bg-[#f8ece7] px-5 py-3 text-xs text-[#833a32]">{shareError}</p>}
 
-      <div className="px-4 pt-4 sm:px-6 sm:pt-5">
-        <nav aria-label="Report sections" role="tablist" className="grid grid-cols-2 gap-2 lg:grid-cols-4">
-          {tabs.map((tab) => <button key={tab.id} type="button" role="tab" aria-selected={activeTab === tab.id} onClick={() => setActiveTab(tab.id)} className={`min-w-0 rounded-xl border px-3 py-3 text-left transition ${activeTab === tab.id ? 'active-forest-gradient border-[#315d42] text-white shadow-sm' : 'border-[#d9ddd2] bg-[#faf9f4] text-[#304239] hover:border-[#9fbea1] hover:bg-[#f3f7f1]'}`}>
-            <span className="block text-xs font-semibold">{tab.label}</span><span className={`mt-1 hidden text-[10px] leading-4 sm:block ${activeTab === tab.id ? 'text-white/80' : 'text-[#59665d]'}`}>{tab.description}</span>
-          </button>)}
-        </nav>
-      </div>
+      <div className="grid gap-4 px-4 pb-4 pt-4 sm:px-6 sm:pb-6 sm:pt-5 lg:grid-cols-[10.5rem_minmax(0,1fr)] lg:items-start lg:gap-6">
+        <aside className="min-w-0 lg:pt-1">
+          <p className="mb-2 hidden px-2 text-[10px] font-bold uppercase tracking-[.12em] text-[#59665d] lg:block">Report sections</p>
+          <nav aria-label="Report sections" role="tablist" className="flex max-w-full gap-2 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0">
+            {tabs.map((tab) => <button key={tab.id} type="button" role="tab" aria-selected={activeTab === tab.id} onClick={() => setActiveTab(tab.id)} className={`report-nav-button flex min-h-11 shrink-0 items-center rounded-xl border px-3 py-2.5 text-left text-xs font-semibold transition lg:w-full ${activeTab === tab.id ? 'report-nav-active' : 'report-nav-idle'}`}>
+              <span>{tab.label}</span>
+            </button>)}
+          </nav>
+          <div className="surface-paper-gradient mt-4 hidden rounded-xl border border-[#d9ddd2] p-3 lg:block">
+            <p className="text-[10px] font-bold uppercase tracking-[.1em] text-[#304239]">Scan scope</p>
+            <p className="mt-1 text-[10px] leading-4 text-[#59665d]">Depth-{formatNumber(repository?.clone_depth)} snapshot. Repository code is inspected statically and never executed.</p>
+          </div>
+        </aside>
 
-      <div role="tabpanel" aria-label={tabs.find((tab) => tab.id === activeTab)?.label} className="min-w-0 p-4 sm:p-6">
-        {activeTab === 'glance' && <AtAGlance result={result} />}
-        {activeTab === 'architecture' && <ArchitectureSection result={result} />}
-        {activeTab === 'getting-started' && <GettingStartedSection result={result} />}
-        {activeTab === 'hotspots' && <HotspotsAndFixes result={result} />}
+        <div role="tabpanel" aria-label={tabs.find((tab) => tab.id === activeTab)?.label} className="min-w-0">
+          {activeTab === 'overview' && <AtAGlance result={result} />}
+          {activeTab === 'code-map' && <ArchitectureSection result={result} />}
+          {activeTab === 'stack' && <StackSection result={result} />}
+          {activeTab === 'files' && <FilesSection result={result} />}
+          {activeTab === 'quick-fixes' && <QuickFixesSection result={result} />}
+          {activeTab === 'findings' && <HotspotsAndFixes result={result} />}
+          {activeTab === 'how-it-works' && <HowItWorksSection result={result} />}
+        </div>
       </div>
 
       <footer className="border-t border-[#e3e1d7] px-5 py-3 text-[10px] leading-5 text-[#59665d] sm:px-7">

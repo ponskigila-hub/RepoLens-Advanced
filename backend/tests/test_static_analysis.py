@@ -60,6 +60,23 @@ class StaticAnalysisTests(unittest.TestCase):
         self.assertTrue(scan["artifacts"]["has_root_gitignore"])
         self.assertTrue(scan["artifacts"]["has_docker"])
 
+    def test_dependency_inventory_uses_package_fields_not_manifest_metadata(self):
+        self.fixture()
+        (self.root / "package.json").write_text(json.dumps({
+            "name": "sample-app", "version": "1.0.0", "dependencies": {"react": "^19"},
+            "devDependencies": {"vitest": "^2"},
+        }), encoding="utf-8")
+        (self.root / "pyproject.toml").write_text(
+            '[project]\nname = "sample-backend"\nversion = "1.0"\nrequires-python = ">=3.11"\n'
+            'dependencies = ["fastapi>=0.110", "pydantic"]\n'
+            '[project.optional-dependencies]\ntest = ["pytest>=8"]\n', encoding="utf-8"
+        )
+        dependencies = FileScanner(str(self.root)).scan()["dependencies"]
+        self.assertEqual(set(dependencies["names"]), {"fastapi", "pydantic", "pytest", "react", "requests", "vitest"})
+        self.assertNotIn("name", dependencies["names"])
+        self.assertNotIn("version", dependencies["names"])
+        self.assertNotIn("requires-python", dependencies["names"])
+
     def test_root_level_source_file_does_not_crash_architecture_scoring(self):
         self.fixture()
         (self.root / "app.py").write_text("def main():\n    return 'ok'\n", encoding="utf-8")
@@ -130,6 +147,37 @@ class StaticAnalysisTests(unittest.TestCase):
         scan_without_manifest = FileScanner(str(self.root)).scan()
         self.assertEqual(scan_without_manifest["framework_detection"]["status"], "unavailable")
 
+    def test_scanner_extracts_supported_python_and_typescript_symbol_names(self):
+        self.fixture()
+        (self.root / "src/service.py").write_text(
+            "class BillingService:\n    def create_invoice(self, customer):\n        return customer\n",
+            encoding="utf-8",
+        )
+        (self.root / "src/ui.tsx").write_text(
+            "export function InvoicePanel() { return null; }\nexport const useInvoices = () => [];\n",
+            encoding="utf-8",
+        )
+        symbols = FileScanner(str(self.root)).scan()["code_symbols"]
+        found = {(item["path"], item["kind"], item["name"]) for item in symbols["items"]}
+        self.assertIn(("src/service.py", "class", "BillingService"), found)
+        self.assertIn(("src/service.py", "function", "create_invoice"), found)
+        self.assertIn(("src/ui.tsx", "function", "InvoicePanel"), found)
+        self.assertIn(("src/ui.tsx", "function", "useInvoices"), found)
+        self.assertEqual(symbols["status"], "available")
+
+    def test_code_overview_summarizes_paths_symbols_and_readme_framework_crosscheck(self):
+        self.fixture()
+        (self.root / "README.md").write_text("# Example\n\nA React interface. Django is also mentioned here.\n", encoding="utf-8")
+        (self.root / "package.json").write_text(json.dumps({"dependencies": {"react": "^19"}}), encoding="utf-8")
+        scan = FileScanner(str(self.root)).scan()
+        overview = analyze_route._code_overview(scan)
+        self.assertEqual(overview["status"], "available")
+        self.assertIn("React", overview["frameworks"])
+        checks = {item["name"]: item["status"] for item in overview["readme_framework_crosscheck"]["items"]}
+        self.assertEqual(checks["React"], "mentioned_and_declared")
+        self.assertEqual(checks["Django"], "readme_only")
+        self.assertIn("src", [item["path"] for item in overview["directory_roles"]])
+
     def test_coverage_is_unknown_without_report_and_measured_with_lcov(self):
         self.fixture()
         scan = FileScanner(str(self.root)).scan()
@@ -168,8 +216,10 @@ class StaticAnalysisTests(unittest.TestCase):
         self.fixture()
         original_clone = analyze_route.repo_cloner.clone_repository
         original_cleanup = analyze_route.repo_cloner.cleanup_repo
+        original_metadata = analyze_route.github_metadata_service.fetch
         analyze_route.repo_cloner.clone_repository = lambda url: {"success": True, "local_path": str(self.root), "repo_name": "sample/project", "owner": "sample", "repository": "project", "clone_depth": 1}
         analyze_route.repo_cloner.cleanup_repo = lambda path: True
+        analyze_route.github_metadata_service.fetch = lambda owner, repository: {"status": "available", "created_at": "2020-01-02T03:04:05Z", "owner": {"login": owner, "type": "User", "html_url": "https://github.com/sample", "avatar_url": None}, "contributors": [], "contributors_status": "none_reported", "contributors_truncated": False, "contributors_limit": 10, "source": "GitHub REST API", "note": "test fixture"}
         try:
             async def post_analysis():
                 transport = httpx.ASGITransport(app=app)
@@ -179,9 +229,10 @@ class StaticAnalysisTests(unittest.TestCase):
         finally:
             analyze_route.repo_cloner.clone_repository = original_clone
             analyze_route.repo_cloner.cleanup_repo = original_cleanup
+            analyze_route.github_metadata_service.fetch = original_metadata
         self.assertEqual(response.status_code, 200, response.text)
         data = response.json()
-        self.assertEqual(data["schema_version"], "1.1")
+        self.assertEqual(data["schema_version"], "1.2")
         self.assertIn("metrics", data)
         self.assertIn("folder_breakdown", data)
         self.assertIn("maintainability", data["scores"])
@@ -192,6 +243,9 @@ class StaticAnalysisTests(unittest.TestCase):
         self.assertIn("framework_detection", data["technology_stack"])
         self.assertEqual(data["quick_fix_checklist"]["completed"], 5)
         self.assertEqual(data["quick_fix_checklist"]["total"], 5)
+        self.assertEqual(data["github_metadata"]["created_at"], "2020-01-02T03:04:05Z")
+        self.assertEqual(data["code_overview"]["status"], "available")
+        self.assertGreaterEqual(data["code_overview"]["symbols"]["count"], 1)
 
 
 if __name__ == "__main__":

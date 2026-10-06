@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from collections import Counter
 from pathlib import Path
 import re
@@ -12,6 +13,7 @@ from starlette.concurrency import run_in_threadpool
 
 from services.analysis_service import AnalysisService
 from services.file_scanner import FileScanner
+from services.github_metadata import GitHubMetadataService
 from services.prompt_builder import PromptBuilder
 from services.repo_cloner import RepoCloner
 from services.static_analyzer import StaticAnalyzer
@@ -21,6 +23,7 @@ repo_cloner = RepoCloner()
 prompt_builder = PromptBuilder()
 analysis_service = AnalysisService()
 static_analyzer = StaticAnalyzer()
+github_metadata_service = GitHubMetadataService()
 
 
 class AnalyzeRequest(BaseModel):
@@ -44,6 +47,8 @@ class AnalyzeResponse(BaseModel):
     quick_fix_checklist: dict[str, Any]
     ml_scores: dict[str, Any]
     repository_overview: dict[str, Any]
+    code_overview: dict[str, Any]
+    github_metadata: dict[str, Any]
     creator_information: dict[str, Any]
     technology_stack: dict[str, Any]
     architecture_overview: dict[str, Any]
@@ -67,7 +72,10 @@ async def analyze_repository(request: AnalyzeRequest):
         raise HTTPException(status_code=400, detail=clone.get("error", "Repository clone failed."))
     local_path = clone["local_path"]
     try:
-        scan = await run_in_threadpool(FileScanner(local_path).scan)
+        scan, github_metadata = await asyncio.gather(
+            run_in_threadpool(FileScanner(local_path).scan),
+            _best_effort_github_metadata(clone["owner"], clone["repository"]),
+        )
         if not scan.get("success"):
             raise HTTPException(status_code=500, detail=scan.get("error", "Repository scan failed."))
         static = await run_in_threadpool(static_analyzer.analyze, scan)
@@ -82,6 +90,7 @@ async def analyze_repository(request: AnalyzeRequest):
         insights["llm"] = llm_state
         files = scan.get("files", [])
         project_overview = _project_overview(scan, clone["repo_name"], technologies=scan.get("technologies", []))
+        code_overview = _code_overview(scan)
         quick_fix_checklist = _quick_fix_checklist(scan)
         categories = Counter(f.get("category", "other") for f in files)
         important = [_important_file(f) for f in scan.get("important_files", [])[:30]]
@@ -124,12 +133,13 @@ async def analyze_repository(request: AnalyzeRequest):
             "final_assessment": f"Static analysis rates this repository {score_band.lower()} for quality using {scan['file_count']} scanned files and {scan['total_lines']} source/test lines. Scores are evidence-based heuristics and do not claim runtime or human-review validation.",
         }
         return AnalyzeResponse(
-            success=True, schema_version="1.1", repository={"owner": owner, "name": name, "full_name": clone["repo_name"], "url": f"https://github.com/{owner}/{name}", "clone_depth": clone["clone_depth"]},
+            success=True, schema_version="1.2", repository={"owner": owner, "name": name, "full_name": clone["repo_name"], "url": f"https://github.com/{owner}/{name}", "clone_depth": clone["clone_depth"]},
             repo_info={"name": clone["repo_name"], "technologies": technologies, "file_count": scan["file_count"], "total_lines": scan["total_lines"], "is_mock": False, "ml_model_used": static["score_methodology"]["version"]},
             metrics=static["metrics"], scores=scores, score_methodology=static["score_methodology"],
             file_breakdown={"total": scan["file_count"], "by_category": dict(categories), "by_language": scan["language_breakdown"], "by_extension": scan["extension_breakdown"], "sample_limit": 1000},
             files=files[:1000], folder_breakdown=scan["folder_breakdown"], insights=insights,
             quick_fix_checklist=quick_fix_checklist, ml_scores=ml_scores,
+            code_overview=code_overview, github_metadata=github_metadata,
             repository_overview={"name": project_overview["title"], "purpose": project_overview["description"], "purpose_status": project_overview["status"], "purpose_note": project_overview["note"], "problem_solved": None, "application_type": _application_type(technologies) if scan.get("frameworks") else None, "application_type_status": "inferred_from_declared_frameworks" if scan.get("frameworks") else "unavailable", "application_type_note": "Project type is a lightweight inference from declared frameworks, not a verified runtime behavior." if scan.get("frameworks") else "No declared framework was available to infer a project type.", "target_users": None, "domain": None, "summary_source": project_overview["source"], "summary_confidence": project_overview["confidence"], "evidence": project_overview["evidence"]},
             creator_information={"owner": owner, "maturity_level": _score_band(score_values["quality"]), "coding_style": "Measured file and complexity metrics; stylistic linting is not run.", "open_source_ready": scan["artifacts"]["has_license"], "collaboration_ready": scan["artifacts"]["has_ci"] and scan["artifacts"]["has_tests"]},
             technology_stack=tech_stack,
@@ -141,6 +151,19 @@ async def analyze_repository(request: AnalyzeRequest):
         )
     finally:
         repo_cloner.cleanup_repo(local_path)
+
+
+async def _best_effort_github_metadata(owner: str, repository: str) -> dict[str, Any]:
+    try:
+        return await run_in_threadpool(github_metadata_service.fetch, owner, repository)
+    except Exception:
+        return {
+            "status": "unavailable", "created_at": None, "owner": None,
+            "contributors": [], "contributors_status": "unavailable",
+            "contributors_truncated": False, "contributors_limit": 10,
+            "source": "GitHub REST API",
+            "note": "GitHub metadata could not be retrieved; repository file analysis completed independently.",
+        }
 
 
 def _build_insights(scan, static):
@@ -304,6 +327,119 @@ def _quick_fix_checklist(scan):
             "production_readiness_component": score_component,
         })
     return {"completed": sum(item["complete"] for item in items), "total": len(items), "items": items, "note": "Presence checks only; these items do not replace security, deployment, or license review."}
+
+
+def _code_overview(scan):
+    """Describe observed source layout and names without claiming business intent."""
+    files = scan.get("files", [])
+    language_counts = scan.get("language_breakdown", {})
+    languages = [
+        {"name": name, "files": count}
+        for name, count in sorted(language_counts.items(), key=lambda item: (-item[1], item[0]))
+    ]
+    role_names = {
+        "app": "application entry / routes", "pages": "page routes", "components": "UI components",
+        "routes": "API or route handlers", "api": "API boundary", "services": "service logic",
+        "service": "service logic", "models": "data/domain models", "model": "data/domain models",
+        "repositories": "data access", "repository": "data access", "controllers": "request controllers",
+        "middleware": "middleware", "tests": "tests", "test": "tests", "utils": "utilities",
+        "lib": "shared libraries", "core": "core modules", "backend": "backend modules",
+        "frontend": "frontend modules", "src": "source modules", "infra": "infrastructure",
+        "infrastructure": "infrastructure",
+    }
+    folders = []
+    for folder in scan.get("folder_breakdown", []):
+        path = folder.get("path", ".")
+        if not folder.get("source_files"):
+            continue
+        leaf = Path(path).name.lower()
+        folders.append({
+            "path": path,
+            "role": role_names.get(leaf, "source modules"),
+            "source_files": folder.get("source_files", 0),
+            "file_count": folder.get("file_count", 0),
+        })
+    folders.sort(key=lambda item: (-item["source_files"], item["path"]))
+
+    entry_names = StaticAnalyzer.ENTRYPOINTS | {"index.html"}
+    entrypoints = []
+    for item in files:
+        path = item.get("path", "")
+        lower_path = path.lower()
+        basename = Path(path).name.lower()
+        is_next_route = basename in {"page.tsx", "page.jsx", "page.js"} and ("/app/" in f"/{lower_path}/" or "/pages/" in f"/{lower_path}/")
+        if basename in entry_names or is_next_route:
+            entrypoints.append(path)
+
+    symbols = scan.get("code_symbols", {"status": "unavailable", "count": 0, "parsed_files": 0, "sample_limit": 0, "truncated": False, "items": [], "method": "Symbol extraction was not included in this scan."})
+    frameworks = [item.get("name") for item in scan.get("frameworks", []) if item.get("name")]
+    directory_names = [item["path"] for item in folders[:5]]
+    language_text = ", ".join(f"{item['name']} ({item['files']} {'file' if item['files'] == 1 else 'files'})" for item in languages[:4]) or "no recognized source languages"
+    framework_text = ", ".join(frameworks[:6]) or "no recognized direct framework declarations"
+    if scan.get("source_file_count", 0):
+        parts = [
+            f"The code scan found {scan.get('source_file_count', 0)} source {'file' if scan.get('source_file_count', 0) == 1 else 'files'} and {scan.get('test_file_count', 0)} test {'file' if scan.get('test_file_count', 0) == 1 else 'files'}.",
+            f"Languages by scanned file count: {language_text}.",
+            f"Recognized framework declarations: {framework_text}.",
+        ]
+        if directory_names:
+            parts.append(f"Main code directories: {', '.join(f'`{path}`' for path in directory_names)}.")
+        if symbols.get("count"):
+            parts.append(f"{symbols['count']} function/class names were extracted from supported source syntax.")
+        if entrypoints:
+            parts.append(f"Entry-point candidates: {', '.join(f'`{path}`' for path in entrypoints[:8])}.")
+        summary = " ".join(parts)
+        status = "available"
+    else:
+        summary = None
+        status = "unavailable"
+
+    readme = scan.get("readme_content", "")
+    declared = {item.get("name") for item in scan.get("frameworks", [])}
+    package_to_framework = {package.lower(): name for package, (name, _role) in FileScanner.FRAMEWORK_PACKAGES.items()}
+    candidates = set(declared)
+    readme_lower = readme.casefold()
+    for package, framework_name in package_to_framework.items():
+        terms = (framework_name.casefold(), package)
+        if any(re.search(r"(?<![a-z0-9])" + re.escape(term) + r"(?![a-z0-9])", readme_lower) for term in terms if term):
+            candidates.add(framework_name)
+    crosscheck_items = []
+    if readme:
+        for framework_name in sorted(candidates)[:30]:
+            package_terms = [package for package, name in package_to_framework.items() if name == framework_name]
+            terms = [framework_name.casefold(), *package_terms]
+            mentioned = any(re.search(r"(?<![a-z0-9])" + re.escape(term) + r"(?![a-z0-9])", readme_lower) for term in terms)
+            is_declared = framework_name in declared
+            if mentioned and is_declared:
+                match_status = "mentioned_and_declared"
+            elif mentioned:
+                match_status = "readme_only"
+            else:
+                match_status = "manifest_only"
+            crosscheck_items.append({"name": framework_name, "readme_mentions": mentioned, "manifest_declared": is_declared, "status": match_status})
+        crosscheck_status = "compared" if crosscheck_items else "no_recognized_framework_names"
+        crosscheck_note = "Literal name matching only; this does not verify semantic claims or prove a dependency is active at runtime."
+    else:
+        crosscheck_status = "unavailable"
+        crosscheck_note = "No readable README excerpt was available to compare; code and manifest evidence are still shown separately."
+
+    return {
+        "status": status,
+        "summary": summary,
+        "source_files": scan.get("source_file_count", 0),
+        "test_files": scan.get("test_file_count", 0),
+        "languages": languages,
+        "frameworks": frameworks,
+        "directory_roles": folders[:30],
+        "entrypoint_candidates": entrypoints[:30],
+        "symbols": symbols,
+        "readme_framework_crosscheck": {
+            "status": crosscheck_status,
+            "items": crosscheck_items,
+            "note": crosscheck_note,
+        },
+        "limitations": "This is a static map of paths, declarations, and symbol names. It does not execute code, prove that a file is active at runtime, or infer business purpose from identifiers alone.",
+    }
 
 
 def _important_file(item):

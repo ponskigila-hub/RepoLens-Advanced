@@ -111,6 +111,66 @@ export interface FrameworkDetection {
   note: string;
 }
 
+export interface CodeSymbol {
+  path: string;
+  line: number;
+  kind: 'function' | 'class';
+  name: string;
+}
+
+export interface CodeOverview {
+  status: 'available' | 'unavailable';
+  summary: string | null;
+  source_files: number;
+  test_files: number;
+  languages: Array<{ name: string; files: number }>;
+  frameworks: string[];
+  directory_roles: Array<{ path: string; role: string; source_files: number; file_count: number }>;
+  entrypoint_candidates: string[];
+  symbols: {
+    status: 'available' | 'unavailable';
+    count: number;
+    parsed_files: number;
+    sample_limit: number;
+    truncated: boolean;
+    items: CodeSymbol[];
+    method: string;
+  };
+  readme_framework_crosscheck: {
+    status: 'compared' | 'no_recognized_framework_names' | 'unavailable';
+    items: Array<{
+      name: string;
+      readme_mentions: boolean;
+      manifest_declared: boolean;
+      status: 'mentioned_and_declared' | 'readme_only' | 'manifest_only';
+    }>;
+    note: string;
+  };
+  limitations: string;
+}
+
+export interface GitHubMetadata {
+  status: 'available' | 'partial' | 'unavailable';
+  created_at: string | null;
+  owner: {
+    login: string;
+    type: string | null;
+    html_url: string;
+    avatar_url: string | null;
+  } | null;
+  contributors: Array<{
+    login: string;
+    contributions: number | null;
+    html_url: string;
+    avatar_url: string | null;
+  }>;
+  contributors_status: 'available' | 'none_reported' | 'unavailable';
+  contributors_truncated: boolean;
+  contributors_limit: number;
+  source: string;
+  note: string;
+}
+
 export interface AnalysisResult {
   success: boolean;
   error?: string;
@@ -172,6 +232,8 @@ export interface AnalysisResult {
     summary_confidence?: 'high' | 'medium' | 'low' | null;
     evidence?: string[];
   };
+  code_overview?: CodeOverview;
+  github_metadata?: GitHubMetadata;
   architecture_overview?: { pattern?: string; description?: string; folder_structure?: string; data_flow?: string; scalability?: string };
   architecture_analysis?: {
     architecture_type?: string;

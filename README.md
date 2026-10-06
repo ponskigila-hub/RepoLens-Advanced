@@ -1,19 +1,20 @@
 # RepoLens-Advanced
 
-RepoLens-Advanced is a Next.js + FastAPI tool for getting a grounded first read of a public GitHub repository: what it appears to do, how its source is organized, which engineering signals are present, and what setup gaps deserve attention. It performs a bounded shallow clone and static scan; it never executes repository code.
+RepoLens-Advanced is a Next.js + FastAPI tool for a grounded first read of a **public GitHub repository**. It separates maintainer-written project intent from evidence found in source paths, function/class declarations, dependency manifests, and GitHub metadata. It takes a bounded shallow snapshot and never executes repository code.
 
-## Features
+## What a report shows
 
-- **Evidence-based analysis:** Python AST metrics, syntax-based estimates for other languages, real file/folder/language/dependency inventory, and dynamic scores for Quality, Maintainability, Scalability, Architecture, and Production Readiness.
-- **Project-purpose explanation:** A concise README introduction or supported manifest description is shown before scores, with its source. When no clear purpose text is found, the report marks it unavailable instead of substituting scan metrics or guessing intent.
-- **Framework evidence:** Recognized frameworks and UI/backend libraries are listed with the exact dependency manifest and section where each was declared. “Not detected” and “unavailable” are separate states, and declarations are not presented as proof of runtime use.
-- **Production-readiness quick fixes:** The results check root-level `README.md`, `LICENSE`, `.github/workflows/*.yml`/`.yaml`, `Dockerfile`, and `.gitignore`, with evidence, actionable instructions, and the score component each item affects.
-- **Shareable report:** Save a completed report to SQLite and receive a public, unlisted report URL. Anyone with that URL can view its saved analysis snapshot; source file contents are not stored in the report.
-- **README badge:** A dynamic SVG endpoint displays the latest saved quality score for a repository. The UI generates a Markdown snippet ready to copy into a README.
-- **PDF export:** The report page's **Save PDF** button opens the browser print dialog; choose **Save as PDF**.
-- **Optional LLM narrative:** The optional text-only LLM insight is separate from the static measurements and cannot change scores.
+- **Project purpose and evidence:** README/manifest descriptions are shown as maintainer-provided text, not treated as verified fact. When no clear statement exists, the purpose is explicitly unavailable.
+- **Code-first map:** A file/folder tree, source-bearing directory roles, entry-point candidates, and sampled function/class names. Python symbols come from AST; JavaScript, TypeScript, Go, and Rust use declaration patterns. This is a static map, not runtime call-graph analysis.
+- **README cross-check:** Literal framework names mentioned in the README are compared with direct package declarations in supported manifests. This is a narrow text comparison, not semantic validation.
+- **Technology and languages:** File-based language counts, recognized direct framework declarations with manifest evidence, and dependency/lockfile inventory. Declarations do not prove runtime use.
+- **GitHub identity:** Repository creation date and owner plus up to 10 visible contributors from the public GitHub REST API. This lookup is best-effort and can be unavailable/rate-limited without affecting the source scan. Optional `GITHUB_TOKEN` can raise API limits.
+- **Dynamic engineering report:** Evidence-backed Quality, Maintainability, Scalability, Architecture, and Production Readiness scorecards; inventory; measured tests/coverage when available; risks and recommendations.
+- **Production-readiness quick fixes:** Root-level checks for `README.md`, `LICENSE`, `.github/workflows/*.yml`/`.yaml`, `Dockerfile`, and `.gitignore`.
+- **Share and export:** Explicitly save an unlisted public report, copy its dynamic SVG README badge, and print/save the report as PDF in the browser.
+- **Optional AI narrative:** Text-only, opt-in, separate from measurements, and unable to change scores.
 
-## Run locally
+## Local setup
 
 ### Backend
 
@@ -22,11 +23,11 @@ cd backend
 python -m venv .venv
 . .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env  # optional LLM and service settings
+cp .env.example .env  # optional settings
 uvicorn main:app --reload --port 8000
 ```
 
-SQLite defaults to `backend/data/reports.sqlite3`. Set `REPORT_DB_PATH` to change it. `OPENAI_API_KEY` is optional. For production, mount persistent storage for the SQLite file and configure `CORS_ORIGINS` only if browsers will call FastAPI directly.
+SQLite stores explicitly saved report snapshots at `backend/data/reports.sqlite3` by default. Set `REPORT_DB_PATH` to change it. `GITHUB_TOKEN` is optional; `OPENAI_API_KEY` is only needed for optional AI narrative generation.
 
 ### Frontend
 
@@ -38,11 +39,13 @@ cp .env.example .env.local
 npm run dev
 ```
 
-For deployment, set the **server-side** `REPOLENS_API_URL` on the frontend service to the FastAPI origin (without `/api`). The same-origin Next.js proxy forwards analysis, report, and badge requests. A frontend-only deployment cannot run the Python analyzer. See [frontend setup and troubleshooting](frontend/README.md).
+The browser calls the same-origin Next.js API proxy. For deployment, set the **server-side** `REPOLENS_API_URL` to the FastAPI origin (without `/api`) and deploy both services. A frontend-only deployment cannot run the analyzer. See [deployment](DEPLOYMENT.md), [frontend setup](frontend/README.md), and [troubleshooting](TROUBLESHOOTING.md).
 
-## API and data flow
+## API and architecture
 
-`POST /api/analyze` returns dynamic metrics, evidence-backed scorecards, repository breakdowns, `repository_overview`, and `quick_fix_checklist`. Saving is explicit: `POST /api/reports` persists a completed result, `GET /api/reports/{id}` retrieves it, and `/badge/{owner}/{repository}.svg` serves the latest saved score. Full schema and privacy/operations notes are in [backend/API_CONTRACT.md](backend/API_CONTRACT.md); architecture and file changelog are in [REFACTORING.md](REFACTORING.md).
+`POST /api/analyze` returns schema v1.2. The [API contract](backend/API_CONTRACT.md) documents `repository_overview`, `code_overview`, `github_metadata`, metrics, score evidence, checklist, and errors; a [complete response example](backend/examples/analyze-response.example.json) is maintained alongside it. Architecture and file-level changes are summarized in [REFACTORING.md](REFACTORING.md).
+
+To save/share, the UI calls `POST /api/reports`; `GET /api/reports/{id}` retrieves the snapshot. `/badge/{owner}/{repository}.svg` serves the latest saved quality score. Saved links are public and unlisted—anyone holding the URL can view them. Mount persistent storage for SQLite in production.
 
 ## Tests
 
@@ -52,12 +55,10 @@ pip install -r requirements-dev.txt
 python -m unittest discover -s tests -v
 ```
 
-Frontend production build:
-
 ```bash
 cd frontend
 npm ci
 npm run build
 ```
 
-Current scores use the deterministic `static-v2` methodology. Historical model-training files under `backend/ml/` are not loaded or used by the analysis request path.
+Current scores use the deterministic `static-v2` methodology. Historical training code under `backend/ml/` is not loaded by the analysis request path; see [backend/ml/README.md](backend/ml/README.md).

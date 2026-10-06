@@ -5,6 +5,8 @@ analysis predictable for large or hostile public repositories.
 """
 from __future__ import annotations
 
+import ast
+import io
 import json
 import os
 import re
@@ -37,6 +39,18 @@ class FileScanner:
     MAX_FILES = 12000
     MAX_FILE_BYTES = 512 * 1024
     MAX_TOTAL_READ_BYTES = 24 * 1024 * 1024
+    MAX_SYMBOL_SAMPLES = 120
+    JS_TS_SYMBOL_PATTERNS = (
+        (re.compile(r"^\s*(?:export\s+)?(?:default\s+)?(?:async\s+)?function\s+([A-Za-z_$][\w$]*)"), "function"),
+        (re.compile(r"^\s*(?:export\s+)?(?:default\s+)?(?:abstract\s+)?class\s+([A-Za-z_$][\w$]*)"), "class"),
+        (re.compile(r"^\s*(?:export\s+)?(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s*)?(?:\([^;\n]*\)|[A-Za-z_$][\w$]*)\s*=>"), "function"),
+    )
+    GO_RUST_SYMBOL_PATTERNS = (
+        (re.compile(r"^\s*func\s+(?:\([^)]*\)\s*)?([A-Za-z_]\w*)\s*\("), "function"),
+        (re.compile(r"^\s*(?:pub\s+)?(?:async\s+)?fn\s+([A-Za-z_]\w*)\s*[<(]"), "function"),
+        (re.compile(r"^\s*(?:pub\s+)?struct\s+([A-Za-z_]\w*)"), "class"),
+        (re.compile(r"^\s*(?:pub\s+)?(?:trait|enum)\s+([A-Za-z_]\w*)"), "class"),
+    )
     FRAMEWORK_MANIFESTS = {"package.json", "requirements.txt", "requirements-dev.txt", "pyproject.toml", "cargo.toml"}
     FRAMEWORK_PACKAGES = {
         "next": ("Next.js", "Web framework"), "react": ("React", "UI framework/library"),
@@ -156,8 +170,33 @@ class FileScanner:
                         if match: dependencies.add(match.group(1).lower().replace("_", "-"))
             elif name == "pyproject.toml":
                 manifests.append(path)
-                for match in re.finditer(r"^\s*([A-Za-z0-9_.-]+)\s*(?:[<=>~!]|\s*=)", content, re.M):
-                    dependencies.add(match.group(1).lower().replace("_", "-"))
+                try:
+                    data = tomllib.loads(content)
+                    project = data.get("project", {})
+                    if isinstance(project, dict):
+                        declared = project.get("dependencies", [])
+                        if isinstance(declared, list):
+                            for requirement in declared:
+                                if isinstance(requirement, str):
+                                    match = re.match(r"^\s*([A-Za-z0-9][A-Za-z0-9_.-]*)", requirement)
+                                    if match: dependencies.add(match.group(1).lower().replace("_", "-"))
+                        optional = project.get("optional-dependencies", {})
+                        if isinstance(optional, dict):
+                            for group in optional.values():
+                                if isinstance(group, list):
+                                    for requirement in group:
+                                        if isinstance(requirement, str):
+                                            match = re.match(r"^\s*([A-Za-z0-9][A-Za-z0-9_.-]*)", requirement)
+                                            if match: dependencies.add(match.group(1).lower().replace("_", "-"))
+                    poetry = data.get("tool", {}).get("poetry", {})
+                    if isinstance(poetry, dict):
+                        groups = [poetry.get("dependencies", {}), poetry.get("dev-dependencies", {})]
+                        groups.extend(entry.get("dependencies", {}) for entry in poetry.get("group", {}).values() if isinstance(entry, dict))
+                        for packages in groups:
+                            if isinstance(packages, dict):
+                                dependencies.update(package.lower().replace("_", "-") for package in packages if package.lower() != "python")
+                except (ValueError, TypeError, tomllib.TOMLDecodeError):
+                    pass
             elif name == "go.mod":
                 manifests.append(path)
                 dependencies.update(re.findall(r"^\s*([^\s]+)\s+v[0-9]", content, re.M))
@@ -322,6 +361,54 @@ class FileScanner:
                 return {"name": project_name if isinstance(project_name, str) else None, "description": description.strip()[:1200], "manifest_path": item["path"]}
         return {"name": None, "description": None, "manifest_path": None}
 
+    @classmethod
+    def _source_symbols(cls, source_items: list[dict[str, str]]) -> dict[str, Any]:
+        """Extract symbol names/locations only; never execute or return source text."""
+        symbols: list[dict[str, Any]] = []
+        total = 0
+        parsed_files = 0
+        languages_seen: set[str] = set()
+        pattern_languages = {"JavaScript", "TypeScript", "Go", "Rust"}
+        for item in source_items:
+            path, content = item["path"], item["content"]
+            language = item.get("language", "Other")
+            found: list[tuple[int, str, str]] = []
+            if language == "Python":
+                try:
+                    tree = ast.parse(content, filename=path)
+                except (SyntaxError, ValueError):
+                    continue
+                parsed_files += 1
+                languages_seen.add(language)
+                for node in ast.walk(tree):
+                    if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                        found.append((node.lineno, "function", node.name))
+                    elif isinstance(node, ast.ClassDef):
+                        found.append((node.lineno, "class", node.name))
+            elif language in pattern_languages:
+                parsed_files += 1
+                languages_seen.add(language)
+                patterns = cls.JS_TS_SYMBOL_PATTERNS if language in {"JavaScript", "TypeScript"} else cls.GO_RUST_SYMBOL_PATTERNS
+                for line_number, source_line in enumerate(io.StringIO(content), 1):
+                    for pattern, kind in patterns:
+                        match = pattern.search(source_line)
+                        if match:
+                            found.append((line_number, kind, match.group(1)))
+            found.sort(key=lambda row: (row[0], row[1], row[2]))
+            for line, kind, name in found:
+                total += 1
+                if len(symbols) < cls.MAX_SYMBOL_SAMPLES:
+                    symbols.append({"path": path, "line": line, "kind": kind, "name": name})
+        return {
+            "status": "available" if parsed_files else "unavailable",
+            "count": total,
+            "parsed_files": parsed_files,
+            "sample_limit": cls.MAX_SYMBOL_SAMPLES,
+            "truncated": total > len(symbols),
+            "items": symbols,
+            "method": "Python AST; declaration-name patterns for JavaScript, TypeScript, Go, and Rust. Other languages may be omitted; names do not describe runtime behavior.",
+        }
+
     def scan(self) -> dict[str, Any]:
         try:
             inventory, warnings = self._walk()
@@ -381,6 +468,7 @@ class FileScanner:
                 "folder_structure": structure, "important_files": important,
                 "technologies": technologies, "readme_content": readme, "readme_path": readme_path,
                 "frameworks": frameworks, "framework_detection": framework_detection,
+                "code_symbols": self._source_symbols(source_items),
                 "project_metadata": self._project_metadata(inventory),
                 "file_count": len(files), "source_file_count": len(source_files),
                 "test_file_count": len(test_files), "total_lines": total_lines,

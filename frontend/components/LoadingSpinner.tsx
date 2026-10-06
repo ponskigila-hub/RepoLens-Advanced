@@ -8,11 +8,11 @@ export default function LoadingSpinner() {
         </span>
         <div className="min-w-0 flex-1">
           <h2 className="font-semibold text-[#203229]">Analyzing repository</h2>
-          <p className="mt-1 text-sm leading-6 text-[#66746b]">Fetching the latest snapshot, measuring source signals, and assembling the report.</p>
+          <p className="mt-1 text-sm leading-6 text-[#59665d]">Fetching the latest snapshot, measuring source signals, and assembling the report.</p>
           <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-[#eeece3]" aria-label="Analysis is in progress">
             <div className="analysis-progress h-full w-2/5 rounded-full bg-gradient-to-r from-[#47734f] via-[#78936b] to-[#bd7452]" />
           </div>
-          <p className="mt-3 text-xs text-[#7c877d]">Progress is indeterminate because the API does not stream per-stage updates.</p>
+          <p className="mt-3 text-xs text-[#59665d]">Progress is indeterminate because the API does not stream per-stage updates.</p>
         </div>
       </div>
     </section>

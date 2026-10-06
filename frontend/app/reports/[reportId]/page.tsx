@@ -33,12 +33,12 @@ export default function PublicReportPage() {
         <a href="/" className="inline-flex items-center gap-2 text-sm font-semibold text-[#203229]"><RepoLensMark className="h-9 w-9" /> RepoLens <span className="text-[#47734f]">AI</span></a>
         <a href="/" className="rounded-lg border border-[#d8ddd2] bg-[#fffefa] px-3 py-2 text-xs font-medium text-[#45594c] hover:border-[#9fbea1]">Analyze another repository</a>
       </header>
-      <div className="mb-5 rounded-2xl border border-[#d8ddd2] bg-[#fffefa] p-4 text-xs leading-5 text-[#66746b] print-hide">
+      <div className="mb-5 rounded-2xl border border-[#d8ddd2] bg-[#fffefa] p-4 text-xs leading-5 text-[#59665d] print-hide">
         <strong className="text-[#304239]">Public, unlisted report.</strong> Anyone with this link can view this saved analysis snapshot. It contains repository metadata and static metrics, not repository source contents.
         {report && <span className="mt-1 block">{report.repository.full_name} · saved {new Date(report.created_at).toLocaleString()}</span>}
       </div>
-      {loading && <div role="status" className="rounded-2xl border border-[#e1e2d9] bg-[#fffefa] p-8 text-sm text-[#66746b]">Loading saved report…</div>}
-      {error && !loading && <div role="alert" className="rounded-2xl border border-[#e8c9bd] bg-[#fffefa] p-8 text-sm text-[#9f5146]"><h1 className="font-semibold">Report unavailable</h1><p className="mt-2">{error}</p><a className="mt-4 inline-block font-medium text-[#47734f] underline" href="/">Return to RepoLens</a></div>}
+      {loading && <div role="status" className="rounded-2xl border border-[#e1e2d9] bg-[#fffefa] p-8 text-sm text-[#59665d]">Loading saved report…</div>}
+      {error && !loading && <div role="alert" className="rounded-2xl border border-[#e8c9bd] bg-[#fffefa] p-8 text-sm text-[#833a32]"><h1 className="font-semibold">Report unavailable</h1><p className="mt-2">{error}</p><a className="mt-4 inline-block font-medium text-[#47734f] underline" href="/">Return to RepoLens</a></div>}
       {report && !loading && <AnalysisCard result={report.result} allowSave={false} />}
     </div>
   </main>;

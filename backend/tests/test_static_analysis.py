@@ -101,6 +101,34 @@ class StaticAnalysisTests(unittest.TestCase):
         self.assertEqual(overview["description"], "A focused manifest project description.")
         self.assertEqual(overview["source"], "package.json")
         self.assertEqual(overview["title"], "sample-app")
+        self.assertEqual(overview["status"], "documented")
+
+    def test_project_overview_does_not_treat_install_commands_as_purpose(self):
+        self.fixture()
+        (self.root / "README.md").write_text("# Sample\n\n## Installation\n\nRun `pip install sample-app` to begin.\n", encoding="utf-8")
+        overview = analyze_route._project_overview(FileScanner(str(self.root)).scan(), "sample/project")
+        self.assertIsNone(overview["description"])
+        self.assertEqual(overview["status"], "unavailable")
+        self.assertIsNone(overview["source"])
+
+    def test_framework_signals_require_exact_declared_packages_and_keep_evidence(self):
+        self.fixture()
+        (self.root / "requirements.txt").write_text("requests>=2\nfastapi-utils>=0.2\nfastapi>=0.110\n# django is only a comment\n", encoding="utf-8")
+        (self.root / "package.json").write_text(json.dumps({"dependencies": {"next": "^15", "react": "^19", "react-icons": "^5"}}), encoding="utf-8")
+        scan = FileScanner(str(self.root)).scan()
+        frameworks = {item["name"]: item for item in scan["frameworks"]}
+        self.assertEqual(set(frameworks), {"FastAPI", "Next.js", "React"})
+        self.assertEqual(scan["framework_detection"]["status"], "detected")
+        self.assertEqual(frameworks["FastAPI"]["evidence"][0]["manifest"], "requirements.txt")
+        self.assertEqual(frameworks["Next.js"]["evidence"][0]["section"], "dependencies")
+
+    def test_framework_detection_distinguishes_not_detected_from_unavailable(self):
+        self.fixture()
+        scan = FileScanner(str(self.root)).scan()
+        self.assertEqual(scan["framework_detection"]["status"], "not_detected")
+        (self.root / "requirements.txt").unlink()
+        scan_without_manifest = FileScanner(str(self.root)).scan()
+        self.assertEqual(scan_without_manifest["framework_detection"]["status"], "unavailable")
 
     def test_coverage_is_unknown_without_report_and_measured_with_lcov(self):
         self.fixture()
@@ -159,7 +187,9 @@ class StaticAnalysisTests(unittest.TestCase):
         self.assertIn("maintainability", data["scores"])
         self.assertEqual(data["insights"]["llm"]["status"], "not_requested")
         self.assertEqual(data["repository_overview"]["purpose"], "Documented project.")
+        self.assertEqual(data["repository_overview"]["purpose_status"], "documented")
         self.assertEqual(data["repository_overview"]["summary_source"], "README.md")
+        self.assertIn("framework_detection", data["technology_stack"])
         self.assertEqual(data["quick_fix_checklist"]["completed"], 5)
         self.assertEqual(data["quick_fix_checklist"]["total"], 5)
 

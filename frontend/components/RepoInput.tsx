@@ -51,7 +51,7 @@ export default function RepoInput({ onAnalyze, isLoading }: RepoInputProps) {
             aria-describedby={error ? 'repo-url-error' : 'repo-url-help'}
             aria-invalid={Boolean(error)}
             disabled={isLoading}
-            className="min-w-0 flex-1 border-0 bg-transparent py-3 text-sm text-[#203229] outline-none placeholder:text-[#92978c] focus:ring-0 disabled:opacity-60 sm:text-base"
+            className="min-w-0 flex-1 border-0 bg-transparent py-3 text-sm text-[#203229] outline-none placeholder:text-[#59665d] focus:ring-0 disabled:opacity-60 sm:text-base"
           />
         </div>
         <button
@@ -72,7 +72,7 @@ export default function RepoInput({ onAnalyze, isLoading }: RepoInputProps) {
           )}
         </button>
       </div>
-      <div className="mt-3 flex flex-col justify-between gap-3 text-xs text-[#66746b] sm:flex-row sm:items-center">
+      <div className="mt-3 flex flex-col justify-between gap-3 text-xs text-[#59665d] sm:flex-row sm:items-center">
         <p id="repo-url-help">Public repositories only. RepoLens never executes the repository code.</p>
         <label className="inline-flex w-fit cursor-pointer items-center gap-2.5 rounded-lg border border-[#e5e3da] px-2.5 py-2 transition hover:border-[#9fbea1] hover:text-[#304239]">
           <input
@@ -85,7 +85,7 @@ export default function RepoInput({ onAnalyze, isLoading }: RepoInputProps) {
           <span>Include optional AI narrative</span>
         </label>
       </div>
-      {error && <p id="repo-url-error" role="alert" className="mt-2 text-sm text-[#a55a4e]">{error}</p>}
+      {error && <p id="repo-url-error" role="alert" className="mt-2 text-sm text-[#833a32]">{error}</p>}
     </form>
   );
 }

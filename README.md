@@ -5,7 +5,8 @@ RepoLens-Advanced is a Next.js + FastAPI tool for getting a grounded first read 
 ## Features
 
 - **Evidence-based analysis:** Python AST metrics, syntax-based estimates for other languages, real file/folder/language/dependency inventory, and dynamic scores for Quality, Maintainability, Scalability, Architecture, and Production Readiness.
-- **Project-purpose explanation:** A concise description is extracted from the README or supported project manifests. The response cites its source and confidence; when no description exists, RepoLens says so instead of inventing intent.
+- **Project-purpose explanation:** A concise README introduction or supported manifest description is shown before scores, with its source. When no clear purpose text is found, the report marks it unavailable instead of substituting scan metrics or guessing intent.
+- **Framework evidence:** Recognized frameworks and UI/backend libraries are listed with the exact dependency manifest and section where each was declared. “Not detected” and “unavailable” are separate states, and declarations are not presented as proof of runtime use.
 - **Production-readiness quick fixes:** The results check root-level `README.md`, `LICENSE`, `.github/workflows/*.yml`/`.yaml`, `Dockerfile`, and `.gitignore`, with evidence, actionable instructions, and the score component each item affects.
 - **Shareable report:** Save a completed report to SQLite and receive a public, unlisted report URL. Anyone with that URL can view its saved analysis snapshot; source file contents are not stored in the report.
 - **README badge:** A dynamic SVG endpoint displays the latest saved quality score for a repository. The UI generates a Markdown snippet ready to copy into a README.

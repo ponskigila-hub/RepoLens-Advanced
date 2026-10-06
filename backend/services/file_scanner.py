@@ -37,6 +37,22 @@ class FileScanner:
     MAX_FILES = 12000
     MAX_FILE_BYTES = 512 * 1024
     MAX_TOTAL_READ_BYTES = 24 * 1024 * 1024
+    FRAMEWORK_MANIFESTS = {"package.json", "requirements.txt", "requirements-dev.txt", "pyproject.toml", "cargo.toml"}
+    FRAMEWORK_PACKAGES = {
+        "next": ("Next.js", "Web framework"), "react": ("React", "UI framework/library"),
+        "vue": ("Vue", "UI framework"), "@angular/core": ("Angular", "UI framework"),
+        "svelte": ("Svelte", "UI framework"), "astro": ("Astro", "Web framework"),
+        "nuxt": ("Nuxt", "Web framework"), "gatsby": ("Gatsby", "Web framework"),
+        "@remix-run/react": ("Remix", "Web framework"), "express": ("Express", "Backend framework"),
+        "fastify": ("Fastify", "Backend framework"), "@nestjs/core": ("NestJS", "Backend framework"),
+        "hono": ("Hono", "Backend framework"), "koa": ("Koa", "Backend framework"),
+        "tailwindcss": ("Tailwind CSS", "Styling framework"), "fastapi": ("FastAPI", "Backend framework"),
+        "django": ("Django", "Backend framework"), "flask": ("Flask", "Backend framework"),
+        "starlette": ("Starlette", "ASGI framework"), "streamlit": ("Streamlit", "App framework"),
+        "gradio": ("Gradio", "App framework"), "litestar": ("Litestar", "Backend framework"),
+        "sanic": ("Sanic", "Backend framework"), "axum": ("Axum", "Backend framework"),
+        "actix-web": ("Actix Web", "Backend framework"), "rocket": ("Rocket", "Backend framework"),
+    }
 
     def __init__(self, repo_path: str):
         self.repo_path = Path(repo_path).resolve()
@@ -182,6 +198,108 @@ class FileScanner:
         return technologies
 
     @staticmethod
+    def _framework_signals(inventory: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+        """Find recognized framework/library declarations and retain manifest evidence."""
+        signals: dict[str, dict[str, Any]] = {}
+        checked: set[str] = set()
+        parsed: set[str] = set()
+
+        def add(package: str, manifest: str, section: str) -> None:
+            key = package.strip().lower().replace("_", "-")
+            descriptor = FileScanner.FRAMEWORK_PACKAGES.get(key)
+            if descriptor is None:
+                return
+            name, role = descriptor
+            item = signals.setdefault(name, {"name": name, "role": role, "packages": [], "evidence": []})
+            if package not in item["packages"]:
+                item["packages"].append(package)
+            evidence = {"manifest": manifest, "section": section}
+            if evidence not in item["evidence"]:
+                item["evidence"].append(evidence)
+
+        def add_requirement(raw: str, manifest: str, section: str) -> None:
+            requirement = raw.split("#", 1)[0].strip()
+            if not requirement or requirement.startswith(("-", "git+", "http://", "https://")):
+                return
+            match = re.match(r"([A-Za-z0-9][A-Za-z0-9_.-]*)", requirement)
+            if match:
+                add(match.group(1), manifest, section)
+
+        for item in inventory:
+            path = item["path"]
+            filename = Path(item["name"]).name.lower()
+            if filename not in FileScanner.FRAMEWORK_MANIFESTS:
+                continue
+            checked.add(path)
+            content = item.get("_content")
+            if content is None:
+                continue
+            try:
+                if filename == "package.json":
+                    manifest = json.loads(content)
+                    if not isinstance(manifest, dict):
+                        continue
+                    parsed.add(path)
+                    for section in ("dependencies", "optionalDependencies", "peerDependencies", "devDependencies"):
+                        packages = manifest.get(section, {})
+                        if isinstance(packages, dict):
+                            for package in packages:
+                                add(package, path, section)
+                elif filename in {"requirements.txt", "requirements-dev.txt"}:
+                    parsed.add(path)
+                    for line in content.splitlines():
+                        add_requirement(line, path, "requirements")
+                elif filename == "pyproject.toml":
+                    manifest = tomllib.loads(content)
+                    parsed.add(path)
+                    project = manifest.get("project", {})
+                    if isinstance(project, dict):
+                        for requirement in project.get("dependencies", []) if isinstance(project.get("dependencies", []), list) else []:
+                            add_requirement(requirement, path, "project.dependencies")
+                        optional = project.get("optional-dependencies", {})
+                        if isinstance(optional, dict):
+                            for group, values in optional.items():
+                                if isinstance(values, list):
+                                    for requirement in values:
+                                        add_requirement(requirement, path, f"project.optional-dependencies.{group}")
+                    poetry = manifest.get("tool", {}).get("poetry", {})
+                    if isinstance(poetry, dict):
+                        dependency_groups = [("tool.poetry.dependencies", poetry.get("dependencies", {}))]
+                        groups = poetry.get("group", {})
+                        if isinstance(groups, dict):
+                            dependency_groups.extend((f"tool.poetry.group.{group}.dependencies", values.get("dependencies", {})) for group, values in groups.items() if isinstance(values, dict))
+                        for section, packages in dependency_groups:
+                            if isinstance(packages, dict):
+                                for package in packages:
+                                    add(package, path, section)
+                elif filename == "cargo.toml":
+                    manifest = tomllib.loads(content)
+                    parsed.add(path)
+                    for section in ("dependencies", "dev-dependencies", "build-dependencies"):
+                        packages = manifest.get(section, {})
+                        if isinstance(packages, dict):
+                            for package in packages:
+                                add(package, path, section)
+            except (ValueError, TypeError, tomllib.TOMLDecodeError):
+                continue
+
+        frameworks = sorted(signals.values(), key=lambda entry: (entry["role"], entry["name"]))
+        for entry in frameworks:
+            entry["packages"].sort()
+            entry["evidence"].sort(key=lambda evidence: (evidence["manifest"], evidence["section"]))
+        if frameworks:
+            status = "detected"
+            note = "Recognized packages are declared in the listed manifests; this does not confirm they are imported or active at runtime."
+        elif parsed:
+            status = "not_detected"
+            note = "No recognized framework package was found in readable supported manifests; custom or indirectly managed frameworks may be missed."
+        else:
+            status = "unavailable"
+            note = "No supported readable dependency manifest was available, so framework detection could not be completed."
+        detection = {"status": status, "manifests": sorted(checked), "parsed_manifests": sorted(parsed), "note": note}
+        return frameworks, detection
+
+    @staticmethod
     def _project_metadata(inventory: list[dict[str, Any]]) -> dict[str, Any]:
         """Read project identity from known manifests; never execute repository code."""
         candidates = sorted(
@@ -208,7 +326,8 @@ class FileScanner:
         try:
             inventory, warnings = self._walk()
             dependencies = self._dependencies(inventory)
-            technologies = sorted(self._detect_technologies(inventory))
+            frameworks, framework_detection = self._framework_signals(inventory)
+            technologies = sorted(set(self._detect_technologies(inventory)) | {framework["name"] for framework in frameworks})
             files: list[dict[str, Any]] = []
             folders: dict[str, dict[str, int]] = defaultdict(lambda: {"file_count": 0, "source_files": 0, "lines": 0, "size_bytes": 0})
             languages: Counter[str] = Counter()
@@ -261,6 +380,7 @@ class FileScanner:
                 "source_files": source_items, "folder_breakdown": folder_list,
                 "folder_structure": structure, "important_files": important,
                 "technologies": technologies, "readme_content": readme, "readme_path": readme_path,
+                "frameworks": frameworks, "framework_detection": framework_detection,
                 "project_metadata": self._project_metadata(inventory),
                 "file_count": len(files), "source_file_count": len(source_files),
                 "test_file_count": len(test_files), "total_lines": total_lines,

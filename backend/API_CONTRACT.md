@@ -19,7 +19,8 @@ The response has `schema_version: "1.1"` and is defined by [the complete validat
 | Group | Description |
 |---|---|
 | `repository`, `repo_info` | Canonical repository identity, URL, clone depth, technologies, and inventory totals. |
-| `repository_overview` | Concise project description sourced from the first README paragraph or a supported manifest (`package.json`, `pyproject.toml`, `Cargo.toml`), plus `summary_source`, `summary_confidence`, and `evidence`. If no description is found, the API says so and reports only detected technologies; it does not guess project intent. |
+| `repository_overview` | Project-purpose text from a README introduction/explicit overview section or a supported manifest (`package.json`, `pyproject.toml`, `Cargo.toml`), with `purpose_status`, `purpose_note`, source, and evidence. If no clear description is found, `purpose` is `null` and status is `unavailable`; scan summaries and file/language counts are not substituted for product intent. `application_type` is nullable and explicitly marked as an inference from declared framework signals. |
+| `technology_stack` | Existing technology categories plus `frameworks` entries (`name`, `role`, package name, and exact manifest/section evidence) and `framework_detection` status. Frameworks are recognized from direct declarations in readable `package.json`, requirements files, `pyproject.toml`, or `Cargo.toml`; declarations do not prove runtime use. |
 | `metrics` | Observed file/line/language/dependency/artifact metrics, Python AST measures, coverage when a supported report exists, and maintenance/security-pattern candidates. |
 | `scores` | Quality, maintainability, scalability, architecture, and production-readiness weighted scorecards. Each component includes its score, weight, and evidence. Current method is `static-v2`. |
 | `quick_fix_checklist` | Five file-presence checks at the repository root: `README.md`, `LICENSE` (or `LICENSE.*`/`COPYING`), `.github/workflows/*.yml`/`.yaml`, `Dockerfile`, and `.gitignore`. Each item includes `complete`, `status`, evidence paths, a maintainer-directed instruction, and its Production Readiness component. |
@@ -28,6 +29,8 @@ The response has `schema_version: "1.1"` and is defined by [the complete validat
 | Compatibility fields | `ml_scores`, architecture/onboarding/quality/security/performance summaries remain available; the `ml_scores` name is historical, not an ML prediction. |
 
 The checklist only reports whether matching files exist. A present file is not a quality or safety certification. README documentation, license, GitHub Actions workflow, Dockerfile, and `.gitignore` signals contribute to the dynamic Production Readiness score; the contribution breakdown and evidence are returned under `scores.production_readiness.components`.
+
+Framework detection statuses are `detected` (recognized package declarations found), `not_detected` (at least one supported manifest was parsed but no recognized framework was found), or `unavailable` (no supported readable manifest was available). In all cases the `note` explains the boundary; custom frameworks and indirect/monorepo-managed dependencies may not be recognized.
 
 ## Save and retrieve a shareable report
 

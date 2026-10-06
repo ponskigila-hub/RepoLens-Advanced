@@ -22,10 +22,10 @@ This is a static-analysis product, not a runtime test or vulnerability scanner. 
 
 | File | Technical change |
 |---|---|
-| `backend/services/file_scanner.py` | Bounded full-tree inventory, safe symlink handling, language/folder breakdowns, manifest/lockfile parsing, exact README/license/workflow/Dockerfile/`.gitignore` paths, safe package-description extraction, and scan warnings. |
+| `backend/services/file_scanner.py` | Bounded full-tree inventory, safe symlink handling, language/folder breakdowns, manifest/lockfile parsing, exact readiness-file paths, safe package metadata extraction, and direct-dependency framework signals with manifest/section evidence. |
 | `backend/services/static_analyzer.py` | Python AST/heuristic static metrics, report-backed coverage reader, five dynamic scorecards, component evidence, and `static-v2` Production Readiness artifact weights. |
 | `backend/services/repo_cloner.py` | Strict GitHub HTTPS URL parsing, shallow/filter clone, timeout, no interactive credentials/LFS smudging, unique temp paths, safe cleanup. |
-| `backend/routes/analyze.py` | `/api/analyze` response v1.1; README/manifest-sourced project overview with provenance and a five-item file-presence checklist tied to score components; deterministic findings and optional LLM result. |
+| `backend/routes/analyze.py` | `/api/analyze` response v1.1; intro/overview-only README extraction, nullable purpose with explicit availability/provenance, inference caveats, framework evidence, and a five-item checklist. |
 | `backend/services/report_store.py`, `backend/routes/reports.py` | SQLite persistence for explicitly saved public-unlisted JSON snapshots; bounded payload validation; report retrieval and sanitized dynamic latest-score SVG badges. |
 | `backend/services/analysis_service.py` | Removed ML model initialization from the API path; optional bounded OpenAI-compatible LLM generation only. |
 | `backend/ml/__init__.py` | Removed eager imports of offline trainers/model artifacts so importing the package cannot load ML dependencies at API startup. |
@@ -36,17 +36,17 @@ This is a static-analysis product, not a runtime test or vulnerability scanner. 
 | `backend/main.py` | Registers analysis, health, report, and root-level SVG badge routes; retains environment-driven CORS and the scoring health signal. |
 | `backend/.env.example`, `backend/Dockerfile`, `.gitignore` | Documents/configures `REPORT_DB_PATH`, provides `/app/data` as a persistent mount point, and excludes SQLite database/WAL/SHM files from source control. |
 | `frontend/services/api.ts`, `frontend/services/backendProxy.ts` | Same-origin typed analysis, health, report-save/report-fetch clients and server-to-server forwarding, including badge responses. |
-| `frontend/app/page.tsx`, `frontend/components/AnalysisCard.tsx` | Report page UI with project-purpose provenance, scores, files, quick-fix checklist, explicit save/share controls, copyable Markdown badge, and browser-native PDF print styling. |
+| `frontend/app/page.tsx`, `frontend/components/AnalysisCard.tsx` | High-contrast report hierarchy puts cited project purpose and framework declarations before scores; distinguishes scan summary from project intent and makes unavailable/not-detected/not-measured states explicit. |
 | `frontend/app/reports/[reportId]/page.tsx` | Loads and renders a public saved report snapshot; exposes the same print-to-PDF action. |
 | `frontend/app/api/reports/`, `frontend/app/badge/` | Same-origin Next.js proxy routes for report persistence/retrieval and dynamic SVG assets. |
-| `frontend/types/analysis.ts` | Typed schema v1.1 score/metrics, artifact checklist, project provenance, and saved/public report contracts. |
+| `frontend/types/analysis.ts` | Typed schema v1.1 score/metrics, artifact checklist, nullable purpose status, framework declaration evidence, and saved/public report contracts. |
 | `frontend/next-env.d.ts` | Regenerated Next.js 15 route type reference during the production build. |
 | `frontend/package.json`, `frontend/package-lock.json` | Upgraded Next.js to patched 15.5.27 and moved Tailwind/PostCSS to v4; npm audit reports zero advisories at this lockfile. |
 | `frontend/app/globals.css`, `frontend/postcss.config.js`, `frontend/tailwind.config.js` | Migrated Tailwind directives and PostCSS plugin to v4 and consolidated the active JS configuration. |
 | `frontend/components/RepoInput.tsx` | Restricts input format to public HTTPS GitHub repo URLs and relabels mock toggle as skipping optional LLM only. |
 | `frontend/components/MLScoresCard.tsx`, `frontend/components/FeatureContributionCard.tsx` | Removes old ML/prediction claims and labels the legacy confidence value as evidence scan coverage. |
-| `backend/tests/test_static_analysis.py`, `backend/tests/test_reports.py` | Cover dynamic artifact scores, project-summary provenance, readiness checklist, SQLite save/retrieve, public SVG score output, and invalid/not-found cases. |
-| `backend/API_CONTRACT.md`, `backend/examples/analyze-response.example.json` | Documents analysis, report, and badge contracts; JSON fixture is validated against schema v1.1. |
+| `backend/tests/test_static_analysis.py`, `backend/tests/test_reports.py` | Cover dynamic artifact scores, unavailable-purpose behavior, README command filtering, exact framework package matching/evidence, readiness checklist, and saved-report/badge routes. |
+| `backend/API_CONTRACT.md`, `backend/examples/analyze-response.example.json` | Documents purpose availability and framework-detection states alongside analysis, report, and badge contracts; fixture reflects the current response shape. |
 | `ML_INTEGRATION_GUIDE.md`, `ML_INTEGRATION_README.md`, `QUICK_START_ML.md`, `backend/README.md` | Added a deprecation notice to historical ML docs so old model-training claims are not mistaken for the active score path. |
 | `README.md` | Replaces obsolete ML and cold-start claims with the current reproducible flow and setup instructions. |
 
@@ -75,3 +75,10 @@ The older `backend/ml/` training modules and saved artifacts remain in the repos
 The traceback showed `StaticAnalyzer._signals()` indexing `Path(".").parts[-1]`. Repositories with code files directly in their root have an empty path-parts tuple for the root folder, which raised `IndexError` and returned HTTP 500. The scorer now excludes the unnamed root folder from architectural layer-name detection while still counting its files in all other repository metrics.
 
 `backend/tests/test_static_analysis.py` adds a regression that places a Python source file at the repository root and runs the complete score calculation. The same analysis route was then exercised against the public `FireClow/SuruAhai` repository with optional LLM disabled: it returned HTTP 200 in approximately 2.5 seconds.
+
+## Follow-up: project purpose, framework provenance, and readability
+
+- `backend/routes/analyze.py` now extracts purpose only from the README introduction or an explicit overview/about/description section, then falls back to supported manifest metadata. Installation commands and scan metrics are never presented as what the product does. If no source description exists, `purpose` is `null` with `purpose_status: unavailable` and an explanation.
+- `backend/services/file_scanner.py` recognizes framework/UI-library package declarations in readable `package.json`, requirements files, `pyproject.toml`, and `Cargo.toml`. The response includes each package’s manifest path and dependency section; no declaration is described as proof of runtime use. `detected`, `not_detected`, and `unavailable` are distinct.
+- `frontend/components/AnalysisCard.tsx` puts project purpose and framework evidence above scorecards, separates the scan summary from product purpose, cites description/framework evidence, and labels missing measurements instead of treating them as negative findings. Small helper text and status colors were darkened for stronger contrast.
+- Regression tests pass (14 backend tests); the Next.js production build passes. A live analysis and browser preview were verified for `FireClow/SuruAhai`; the response identifies its README purpose and declared React/FastAPI dependencies with manifest evidence.

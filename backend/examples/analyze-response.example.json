@@ -2,14 +2,14 @@
   "success": true,
   "schema_version": "1.1",
   "repository": {
-    "owner": "ponskigila-hub",
-    "name": "RepoLens-Advanced",
-    "full_name": "ponskigila-hub/RepoLens-Advanced",
-    "url": "https://github.com/ponskigila-hub/RepoLens-Advanced",
+    "owner": "repolens",
+    "name": "example",
+    "full_name": "repolens/example",
+    "url": "https://github.com/repolens/example",
     "clone_depth": 1
   },
   "repo_info": {
-    "name": "ponskigila-hub/RepoLens-Advanced",
+    "name": "repolens/example",
     "technologies": [
       "Docker",
       "FastAPI",
@@ -21,7 +21,7 @@
       "TypeScript"
     ],
     "file_count": 79,
-    "total_lines": 3778,
+    "total_lines": 4032,
     "is_mock": false,
     "ml_model_used": "static-v2"
   },
@@ -33,20 +33,20 @@
       "scanned_source": 38
     },
     "lines": {
-      "source_and_tests": 3778,
-      "source": 3543,
-      "tests": 235,
+      "source_and_tests": 4032,
+      "source": 3758,
+      "tests": 274,
       "comments": 133,
-      "comment_to_source_ratio": 0.038
+      "comment_to_source_ratio": 0.035
     },
     "ast": {
       "python_files_parsed": 18,
       "syntax_error_files": 0,
-      "functions": 116,
+      "functions": 120,
       "classes": 16,
-      "imports": 182,
-      "average_cyclomatic_complexity": 5.69,
-      "maximum_cyclomatic_complexity": 48,
+      "imports": 184,
+      "average_cyclomatic_complexity": 6.01,
+      "maximum_cyclomatic_complexity": 49,
       "complexity_method": "Python AST branch counting; non-Python branching/function estimates from syntax patterns"
     },
     "tests": {
@@ -137,13 +137,13 @@
   },
   "scores": {
     "quality": {
-      "score": 63.9,
+      "score": 63.5,
       "components": [
         {
           "name": "Cyclomatic complexity",
-          "score": 66.5,
+          "score": 64.2,
           "weight": 0.2,
-          "evidence": "Average cyclomatic complexity: 5.69 across 116 functions"
+          "evidence": "Average cyclomatic complexity: 6.01 across 120 functions"
         },
         {
           "name": "Source modularity",
@@ -159,7 +159,7 @@
         },
         {
           "name": "Documentation",
-          "score": 76.6,
+          "score": 77.4,
           "weight": 0.15,
           "evidence": "README/documentation files and measured README length; has README=True"
         },
@@ -178,13 +178,13 @@
       ]
     },
     "maintainability": {
-      "score": 61.4,
+      "score": 60.8,
       "components": [
         {
           "name": "Cyclomatic complexity",
-          "score": 66.5,
+          "score": 64.2,
           "weight": 0.3,
-          "evidence": "Average cyclomatic complexity: 5.69 across 116 functions"
+          "evidence": "Average cyclomatic complexity: 6.01 across 120 functions"
         },
         {
           "name": "Source modularity",
@@ -200,7 +200,7 @@
         },
         {
           "name": "Documentation",
-          "score": 76.6,
+          "score": 77.4,
           "weight": 0.15,
           "evidence": "README/documentation files and measured README length; has README=True"
         },
@@ -347,7 +347,7 @@
         },
         {
           "name": "Documentation depth",
-          "score": 76.6,
+          "score": 77.4,
           "weight": 0.05,
           "evidence": "README/documentation files and measured README length; has README=True"
         },
@@ -366,13 +366,13 @@
       ]
     },
     "overall_quality": {
-      "score": 63.9,
+      "score": 63.5,
       "components": [
         {
           "name": "Cyclomatic complexity",
-          "score": 66.5,
+          "score": 64.2,
           "weight": 0.2,
-          "evidence": "Average cyclomatic complexity: 5.69 across 116 functions"
+          "evidence": "Average cyclomatic complexity: 6.01 across 120 functions"
         },
         {
           "name": "Source modularity",
@@ -388,7 +388,7 @@
         },
         {
           "name": "Documentation",
-          "score": 76.6,
+          "score": 77.4,
           "weight": 0.15,
           "evidence": "README/documentation files and measured README length; has README=True"
         },
@@ -550,8 +550,8 @@
       "name": "README.md",
       "extension": ".md",
       "category": "documentation",
-      "size_bytes": 3504,
-      "lines": 62,
+      "size_bytes": 3810,
+      "lines": 63,
       "language": "Other"
     },
     {
@@ -559,7 +559,7 @@
       "name": "REFACTORING.md",
       "extension": ".md",
       "category": "other",
-      "size_bytes": 11616,
+      "size_bytes": 13969,
       "lines": null,
       "language": "Other"
     },
@@ -604,7 +604,7 @@
       "name": "API_CONTRACT.md",
       "extension": ".md",
       "category": "other",
-      "size_bytes": 6313,
+      "size_bytes": 7204,
       "lines": null,
       "language": "Other"
     },
@@ -757,7 +757,7 @@
       "name": "analyze-response.example.json",
       "extension": ".json",
       "category": "other",
-      "size_bytes": 51926,
+      "size_bytes": 52151,
       "lines": null,
       "language": "Other"
     },
@@ -829,8 +829,8 @@
       "name": "analyze.py",
       "extension": ".py",
       "category": "source",
-      "size_bytes": 25732,
-      "lines": 346,
+      "size_bytes": 28191,
+      "lines": 390,
       "language": "Python"
     },
     {
@@ -856,8 +856,8 @@
       "name": "file_scanner.py",
       "extension": ".py",
       "category": "source",
-      "size_bytes": 17757,
-      "lines": 292,
+      "size_bytes": 25143,
+      "lines": 412,
       "language": "Python"
     },
     {
@@ -892,8 +892,8 @@
       "name": "static_analyzer.py",
       "extension": ".py",
       "category": "source",
-      "size_bytes": 19865,
-      "lines": 268,
+      "size_bytes": 19932,
+      "lines": 272,
       "language": "Python"
     },
     {
@@ -910,8 +910,8 @@
       "name": "test_static_analysis.py",
       "extension": ".py",
       "category": "test",
-      "size_bytes": 8685,
-      "lines": 159,
+      "size_bytes": 11272,
+      "lines": 198,
       "language": "Python"
     },
     {
@@ -1108,8 +1108,8 @@
       "name": "AnalysisCard.tsx",
       "extension": ".tsx",
       "category": "source",
-      "size_bytes": 35548,
-      "lines": 362,
+      "size_bytes": 40590,
+      "lines": 381,
       "language": "TypeScript"
     },
     {
@@ -1162,8 +1162,8 @@
       "name": "analysis.ts",
       "extension": ".ts",
       "category": "source",
-      "size_bytes": 5211,
-      "lines": 170,
+      "size_bytes": 6022,
+      "lines": 198,
       "language": "TypeScript"
     }
   ],
@@ -1172,15 +1172,15 @@
       "path": ".",
       "file_count": 14,
       "source_files": 0,
-      "lines": 136,
-      "size_bytes": 87098
+      "lines": 137,
+      "size_bytes": 89757
     },
     {
       "path": "backend",
       "file_count": 10,
       "source_files": 1,
       "lines": 200,
-      "size_bytes": 12461
+      "size_bytes": 13352
     },
     {
       "path": "frontend",
@@ -1207,15 +1207,15 @@
       "path": "backend/services",
       "file_count": 6,
       "source_files": 6,
-      "lines": 807,
-      "size_bytes": 50464
+      "lines": 931,
+      "size_bytes": 57917
     },
     {
       "path": "frontend/components",
       "file_count": 4,
       "source_files": 4,
-      "lines": 500,
-      "size_bytes": 42824
+      "lines": 519,
+      "size_bytes": 47866
     },
     {
       "path": "frontend/app",
@@ -1228,15 +1228,15 @@
       "path": "backend/routes",
       "file_count": 2,
       "source_files": 2,
-      "lines": 415,
-      "size_bytes": 28596
+      "lines": 459,
+      "size_bytes": 31055
     },
     {
       "path": "backend/tests",
       "file_count": 2,
       "source_files": 0,
-      "lines": 227,
-      "size_bytes": 11441
+      "lines": 266,
+      "size_bytes": 14028
     },
     {
       "path": "backend/utils",
@@ -1264,7 +1264,7 @@
       "file_count": 1,
       "source_files": 0,
       "lines": 0,
-      "size_bytes": 51926
+      "size_bytes": 52151
     },
     {
       "path": "data",
@@ -1319,14 +1319,14 @@
       "path": "frontend/types",
       "file_count": 1,
       "source_files": 1,
-      "lines": 170,
-      "size_bytes": 5211
+      "lines": 198,
+      "size_bytes": 6022
     }
   ],
   "insights": {
-    "summary": "Scanned 79 repository files, 38 source files, and 3778 source/test lines. Detected: Docker, FastAPI, JavaScript, Next.js, Python, React, Tailwind CSS, TypeScript.",
+    "summary": "Scanned 79 repository files, 38 source files, and 4032 source/test lines. Detected: Docker, FastAPI, JavaScript, Next.js, Python, React, Tailwind CSS, TypeScript.",
     "strengths": [
-      "README documentation is present (62 lines scanned).",
+      "README documentation is present (63 lines scanned).",
       "3 test files were detected."
     ],
     "risks": [
@@ -1362,12 +1362,12 @@
       "error": null
     },
     "score_snapshot": {
-      "quality": 63.9,
-      "maintainability": 61.4,
+      "quality": 63.5,
+      "maintainability": 60.8,
       "scalability": 72.4,
       "architecture": 78.4,
       "production_readiness": 36.2,
-      "overall_quality": 63.9
+      "overall_quality": 63.5
     },
     "scan_warnings": []
   },
@@ -1424,8 +1424,8 @@
     "note": "Presence checks only; these items do not replace security, deployment, or license review."
   },
   "ml_scores": {
-    "overall_quality": 63.9,
-    "maintainability": 61.4,
+    "overall_quality": 63.5,
+    "maintainability": 60.8,
     "scalability": 72.4,
     "architecture": 78.4,
     "production_readiness": 36.2,
@@ -1457,7 +1457,7 @@
       "top_contributing_features": [
         {
           "name": "Cyclomatic complexity",
-          "score": 66.5,
+          "score": 64.2,
           "weight": 0.2
         },
         {
@@ -1472,7 +1472,7 @@
         },
         {
           "name": "Documentation",
-          "score": 76.6,
+          "score": 77.4,
           "weight": 0.15
         },
         {
@@ -1493,18 +1493,22 @@
   "repository_overview": {
     "name": "RepoLens-Advanced",
     "purpose": "RepoLens-Advanced is a Next.js + FastAPI tool for getting a grounded first read of a public GitHub repository: what it appears to do, how its source is organized, which engineering signals are present, and what setup gaps deserve attention.",
-    "problem_solved": "Not separately inferred; use the cited project description as context.",
+    "purpose_status": "documented",
+    "purpose_note": "Text excerpted from repository documentation; static analysis does not independently validate the claims.",
+    "problem_solved": null,
     "application_type": "Web application",
-    "target_users": "Not determinable from static metrics alone.",
-    "domain": "Not classified",
+    "application_type_status": "inferred_from_declared_frameworks",
+    "application_type_note": "Project type is a lightweight inference from declared frameworks, not a verified runtime behavior.",
+    "target_users": null,
+    "domain": null,
     "summary_source": "README.md",
-    "summary_confidence": "high",
+    "summary_confidence": "medium",
     "evidence": [
       "README.md"
     ]
   },
   "creator_information": {
-    "owner": "ponskigila-hub",
+    "owner": "repolens",
     "maturity_level": "Moderate",
     "coding_style": "Measured file and complexity metrics; stylistic linting is not run.",
     "open_source_ready": false,
@@ -1527,7 +1531,74 @@
       "Docker"
     ],
     "testing": [],
-    "other": []
+    "other": [],
+    "frameworks": [
+      {
+        "name": "FastAPI",
+        "role": "Backend framework",
+        "packages": [
+          "fastapi"
+        ],
+        "evidence": [
+          {
+            "manifest": "backend/requirements.txt",
+            "section": "requirements"
+          }
+        ]
+      },
+      {
+        "name": "Tailwind CSS",
+        "role": "Styling framework",
+        "packages": [
+          "tailwindcss"
+        ],
+        "evidence": [
+          {
+            "manifest": "frontend/package.json",
+            "section": "devDependencies"
+          }
+        ]
+      },
+      {
+        "name": "React",
+        "role": "UI framework/library",
+        "packages": [
+          "react"
+        ],
+        "evidence": [
+          {
+            "manifest": "frontend/package.json",
+            "section": "dependencies"
+          }
+        ]
+      },
+      {
+        "name": "Next.js",
+        "role": "Web framework",
+        "packages": [
+          "next"
+        ],
+        "evidence": [
+          {
+            "manifest": "frontend/package.json",
+            "section": "dependencies"
+          }
+        ]
+      }
+    ],
+    "framework_detection": {
+      "status": "detected",
+      "manifests": [
+        "backend/requirements-dev.txt",
+        "backend/requirements.txt",
+        "frontend/package.json"
+      ],
+      "parsed_manifests": [
+        "backend/requirements.txt",
+        "frontend/package.json"
+      ],
+      "note": "Recognized packages are declared in the listed manifests; this does not confirm they are imported or active at runtime."
+    }
   },
   "architecture_overview": {
     "pattern": "component-based frontend, layered/module-oriented layout",
@@ -1555,7 +1626,7 @@
     "code_organization": {
       "modularity_level": "Moderate",
       "separation_of_concerns": "2 recognized architectural directories detected",
-      "reusability_score": 61.4
+      "reusability_score": 60.8
     },
     "scalability": {
       "horizontal_scalability": "Container configuration detected",
@@ -1563,7 +1634,7 @@
       "scalability_notes": "Score uses measured modularity, architecture directories, CI/container signals, dependency footprint, and concurrency syntax."
     },
     "strengths": [
-      "README documentation is present (62 lines scanned).",
+      "README documentation is present (63 lines scanned).",
       "3 test files were detected."
     ],
     "weaknesses": [
@@ -1577,29 +1648,29 @@
       "file": "frontend/components/AnalysisCard.tsx",
       "purpose": "source file (TypeScript)",
       "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
-      "size_bytes": 35548,
-      "lines": 362
+      "size_bytes": 40590,
+      "lines": 381
     },
     {
       "file": "backend/routes/analyze.py",
       "purpose": "source file (Python)",
       "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
-      "size_bytes": 25732,
-      "lines": 346
-    },
-    {
-      "file": "backend/services/static_analyzer.py",
-      "purpose": "source file (Python)",
-      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
-      "size_bytes": 19865,
-      "lines": 268
+      "size_bytes": 28191,
+      "lines": 390
     },
     {
       "file": "backend/services/file_scanner.py",
       "purpose": "source file (Python)",
       "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
-      "size_bytes": 17757,
-      "lines": 292
+      "size_bytes": 25143,
+      "lines": 412
+    },
+    {
+      "file": "backend/services/static_analyzer.py",
+      "purpose": "source file (Python)",
+      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
+      "size_bytes": 19932,
+      "lines": 272
     },
     {
       "file": "frontend/app/page.tsx",
@@ -1607,6 +1678,13 @@
       "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
       "size_bytes": 15722,
       "lines": 158
+    },
+    {
+      "file": "backend/tests/test_static_analysis.py",
+      "purpose": "test file (Python)",
+      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
+      "size_bytes": 11272,
+      "lines": 198
     },
     {
       "file": "backend/ml/model_trainer.py",
@@ -1623,13 +1701,6 @@
       "lines": 256
     },
     {
-      "file": "backend/tests/test_static_analysis.py",
-      "purpose": "test file (Python)",
-      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
-      "size_bytes": 8685,
-      "lines": 159
-    },
-    {
       "file": "backend/ml/feature_engineering.py",
       "purpose": "source file (Python)",
       "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
@@ -1644,18 +1715,18 @@
       "lines": 165
     },
     {
+      "file": "frontend/types/analysis.ts",
+      "purpose": "source file (TypeScript)",
+      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
+      "size_bytes": 6022,
+      "lines": 198
+    },
+    {
       "file": "backend/services/report_store.py",
       "purpose": "source file (Python)",
       "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
       "size_bytes": 5309,
       "lines": 108
-    },
-    {
-      "file": "frontend/types/analysis.ts",
-      "purpose": "source file (TypeScript)",
-      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
-      "size_bytes": 5211,
-      "lines": 170
     },
     {
       "file": "frontend/components/RepoInput.tsx",
@@ -1815,7 +1886,7 @@
     {
       "type": "High cyclomatic complexity",
       "severity": "medium",
-      "description": "Maximum measured function complexity is 48.",
+      "description": "Maximum measured function complexity is 49.",
       "suggestion": "Split complex functions into smaller units and add focused tests."
     }
   ],
@@ -1862,7 +1933,7 @@
     "onboarding_difficulty": "Easy",
     "scalability_level": "Moderate",
     "production_readiness": "Limited",
-    "final_assessment": "Static analysis rates this repository moderate for quality using 79 scanned files and 3778 source/test lines. Scores are evidence-based heuristics and do not claim runtime or human-review validation."
+    "final_assessment": "Static analysis rates this repository moderate for quality using 79 scanned files and 4032 source/test lines. Scores are evidence-based heuristics and do not claim runtime or human-review validation."
   },
   "error": null
 }

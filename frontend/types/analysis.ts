@@ -97,12 +97,36 @@ export interface AnalysisMetrics {
   [key: string]: unknown;
 }
 
+export interface FrameworkSignal {
+  name: string;
+  role: string;
+  packages: string[];
+  evidence: Array<{ manifest: string; section: string }>;
+}
+
+export interface FrameworkDetection {
+  status: 'detected' | 'not_detected' | 'unavailable';
+  manifests: string[];
+  parsed_manifests: string[];
+  note: string;
+}
+
 export interface AnalysisResult {
   success: boolean;
   error?: string;
   schema_version?: string;
   repository?: { owner: string; name: string; full_name: string; url: string; clone_depth: number };
   repo_info?: { name: string; technologies: string[]; file_count: number; total_lines: number; is_mock?: boolean; ml_model_used?: string };
+  technology_stack?: {
+    frontend?: string[];
+    backend?: string[];
+    database?: string[];
+    deployment?: string[];
+    testing?: string[];
+    other?: string[];
+    frameworks?: FrameworkSignal[];
+    framework_detection?: FrameworkDetection;
+  };
   metrics?: AnalysisMetrics;
   scores?: Record<string, DynamicScore>;
   score_methodology?: { version?: string; method?: string; score_range?: number[]; not_used?: string[]; coverage_note?: string };
@@ -135,13 +159,17 @@ export interface AnalysisResult {
   };
   repository_overview?: {
     name?: string;
-    purpose?: string;
-    problem_solved?: string;
-    application_type?: string;
-    target_users?: string;
-    domain?: string;
+    purpose?: string | null;
+    purpose_status?: 'documented' | 'unavailable';
+    purpose_note?: string;
+    problem_solved?: string | null;
+    application_type?: string | null;
+    application_type_status?: 'inferred_from_declared_frameworks' | 'unavailable';
+    application_type_note?: string;
+    target_users?: string | null;
+    domain?: string | null;
     summary_source?: string;
-    summary_confidence?: 'high' | 'medium' | 'low';
+    summary_confidence?: 'high' | 'medium' | 'low' | null;
     evidence?: string[];
   };
   architecture_overview?: { pattern?: string; description?: string; folder_structure?: string; data_flow?: string; scalability?: string };

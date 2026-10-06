@@ -45,7 +45,7 @@ class AnalyzeResponse(BaseModel):
     ml_scores: dict[str, Any]
     repository_overview: dict[str, Any]
     creator_information: dict[str, Any]
-    technology_stack: dict[str, list[str]]
+    technology_stack: dict[str, Any]
     architecture_overview: dict[str, Any]
     architecture_analysis: dict[str, Any]
     important_files: list[dict[str, Any]]
@@ -98,6 +98,8 @@ async def analyze_repository(request: AnalyzeRequest):
             "strengths": insights["strengths"], "weaknesses": insights["risks"],
         }
         tech_stack = _technology_stack(technologies)
+        tech_stack["frameworks"] = scan.get("frameworks", [])
+        tech_stack["framework_detection"] = scan.get("framework_detection", {"status": "unavailable", "manifests": [], "parsed_manifests": [], "note": "Framework detection was not included in the scan."})
         report_confidence = round(min(1.0, len(scan.get("source_files", [])) / max(scan.get("source_file_count", 0), 1)), 2)
         components = scores["quality"]["components"]
         contribution = {
@@ -128,7 +130,7 @@ async def analyze_repository(request: AnalyzeRequest):
             file_breakdown={"total": scan["file_count"], "by_category": dict(categories), "by_language": scan["language_breakdown"], "by_extension": scan["extension_breakdown"], "sample_limit": 1000},
             files=files[:1000], folder_breakdown=scan["folder_breakdown"], insights=insights,
             quick_fix_checklist=quick_fix_checklist, ml_scores=ml_scores,
-            repository_overview={"name": project_overview["title"], "purpose": project_overview["description"], "problem_solved": "Not separately inferred; use the cited project description as context.", "application_type": _application_type(technologies), "target_users": "Not determinable from static metrics alone.", "domain": "Not classified", "summary_source": project_overview["source"], "summary_confidence": project_overview["confidence"], "evidence": project_overview["evidence"]},
+            repository_overview={"name": project_overview["title"], "purpose": project_overview["description"], "purpose_status": project_overview["status"], "purpose_note": project_overview["note"], "problem_solved": None, "application_type": _application_type(technologies) if scan.get("frameworks") else None, "application_type_status": "inferred_from_declared_frameworks" if scan.get("frameworks") else "unavailable", "application_type_note": "Project type is a lightweight inference from declared frameworks, not a verified runtime behavior." if scan.get("frameworks") else "No declared framework was available to infer a project type.", "target_users": None, "domain": None, "summary_source": project_overview["source"], "summary_confidence": project_overview["confidence"], "evidence": project_overview["evidence"]},
             creator_information={"owner": owner, "maturity_level": _score_band(score_values["quality"]), "coding_style": "Measured file and complexity metrics; stylistic linting is not run.", "open_source_ready": scan["artifacts"]["has_license"], "collaboration_ready": scan["artifacts"]["has_ci"] and scan["artifacts"]["has_tests"]},
             technology_stack=tech_stack,
             architecture_overview={"pattern": architecture["architecture_type"], "description": architecture["architecture_explanation"], "folder_structure": ", ".join(source_dirs) or "No nested source directories detected", "data_flow": "Static code review required for precise runtime data flow.", "scalability": architecture["scalability"]["scalability_notes"]},
@@ -186,53 +188,95 @@ def _suggestion(category, priority, suggestion, impact):
     return {"category": category, "priority": priority, "suggestion": suggestion, "impact": impact}
 
 
-def _project_overview(scan, repository_name, technologies):
+def _project_overview(scan, repository_name, technologies=None):
     readme = scan.get("readme_content", "")
     metadata = scan.get("project_metadata", {})
     title = repository_name
-    paragraph = []
-    collecting = False
-    for raw_line in readme.splitlines():
-        line = raw_line.strip()
-        if not line:
-            if collecting and paragraph:
-                break
+    lines = readme.splitlines()
+    section_start = len(lines)
+    first_h1 = None
+    for index, raw_line in enumerate(lines):
+        heading = re.match(r"^(#{1,6})\s+(.+?)\s*#*\s*$", raw_line.strip())
+        if not heading:
             continue
-        if line.startswith("#"):
-            if title == repository_name:
-                title = re.sub(r"^#+\s*", "", line).strip() or title
-            continue
-        if line.startswith(("```", "![", "<", "<!--", "|")) or "shields.io" in line.lower():
-            continue
-        clean = re.sub(r"!?\[([^\]]*)\]\([^)]*\)", r"\1", line)
-        clean = re.sub(r"<[^>]+>", "", clean)
-        clean = re.sub(r"^[>*+\-\s]+", "", clean)
-        clean = re.sub(r"[`*_~]", "", clean).strip()
-        if clean:
-            paragraph.append(clean)
-            collecting = True
-        if sum(len(part) for part in paragraph) >= 520:
+        if len(heading.group(1)) == 1 and first_h1 is None:
+            first_h1 = index
+            title = heading.group(2).strip() or title
+        elif len(heading.group(1)) >= 2:
+            section_start = index
             break
 
-    if paragraph:
-        joined = re.sub(r"\s+", " ", " ".join(paragraph))
-        description = re.split(r"(?<=[.!?])\s+", joined, maxsplit=1)[0][:700]
-        source = scan.get("readme_path") or "README.md"
-        confidence = "high" if len(description) >= 40 else "medium"
+    intro_start = first_h1 + 1 if first_h1 is not None else 0
+    description = _first_readme_paragraph(lines[intro_start:section_start])
+    source = (scan.get("readme_path") or "README.md") if description else None
+    if not description:
+        purpose_sections = {"overview", "about", "description", "project overview", "introduction", "purpose", "what it does", "what is this project"}
+        for index, raw_line in enumerate(lines):
+            heading = re.match(r"^#{2,6}\s+(.+?)\s*#*\s*$", raw_line.strip())
+            if not heading:
+                continue
+            label = re.sub(r"[^a-z0-9 ]", " ", heading.group(1).lower())
+            label = re.sub(r"\s+", " ", label).strip()
+            if label not in purpose_sections:
+                continue
+            end = next((cursor for cursor in range(index + 1, len(lines)) if re.match(r"^#{1,6}\s+", lines[cursor].strip())), len(lines))
+            description = _first_readme_paragraph(lines[index + 1:end])
+            if description:
+                source = scan.get("readme_path") or "README.md"
+                break
+
+    if description:
+        description = re.split(r"(?<=[.!?])\s+", re.sub(r"\s+", " ", description), maxsplit=1)[0][:700]
+        confidence = "medium"
+        status = "documented"
+        note = "Text excerpted from repository documentation; static analysis does not independently validate the claims."
         evidence = [source]
     elif metadata.get("description"):
         description = metadata["description"][:700]
         source = metadata.get("manifest_path") or "project manifest"
         title = metadata.get("name") or title
         confidence = "high"
+        status = "documented"
+        note = "Description read from a supported project manifest; this is maintainer-provided metadata, not runtime verification."
         evidence = [source]
     else:
-        detected = ", ".join(technologies[:6]) or "no recognized languages/frameworks"
-        description = f"No explicit project description was found in the README or supported manifests. Static scan detected {detected}; product purpose needs maintainer-provided context."
-        source = "static repository inventory"
-        confidence = "low"
-        evidence = ["Detected languages and repository files; no descriptive README/manifest text"]
-    return {"title": title, "description": description, "source": source, "confidence": confidence, "evidence": evidence}
+        description = None
+        source = None
+        confidence = None
+        status = "unavailable"
+        note = "No clear introductory purpose text was found in the scanned README or supported manifests. RepoLens will not guess the product purpose from file names or language counts."
+        evidence = []
+    return {"title": title, "description": description, "status": status, "note": note, "source": source, "confidence": confidence, "evidence": evidence}
+
+
+def _first_readme_paragraph(lines):
+    paragraph = []
+    in_code = False
+    for raw_line in lines:
+        line = raw_line.strip()
+        if line.startswith("```") or line.startswith("~~~"):
+            in_code = not in_code
+            continue
+        if in_code:
+            continue
+        if not line:
+            if paragraph:
+                break
+            continue
+        if line.startswith("#"):
+            break
+        if line.startswith(("![", "<!--", "|", "<")) or "shields.io" in line.lower():
+            continue
+        clean = re.sub(r"!?\[([^\]]*)\]\([^)]*\)", r"\1", line)
+        clean = re.sub(r"<[^>]+>", "", clean)
+        clean = re.sub(r"^[>*+\-\s]+", "", clean)
+        clean = re.sub(r"[`*_~]", "", clean).strip()
+        if not clean or re.match(r"^(?:\$\s*)?(npm|pnpm|yarn|bun|pip|python|uv|docker|git|cd|make)\b", clean, re.I):
+            continue
+        paragraph.append(clean)
+        if sum(len(part) for part in paragraph) >= 700:
+            break
+    return re.sub(r"\s+", " ", " ".join(paragraph)).strip()
 
 
 def _quick_fix_checklist(scan):

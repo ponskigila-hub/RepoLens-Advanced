@@ -1,16 +1,16 @@
 # RepoLens-Advanced
 
-RepoLens-Advanced is a Next.js + FastAPI tool for inspecting public GitHub repositories. The backend performs a bounded shallow clone, inventories files and build/test/deployment artifacts, computes static code metrics and evidence-backed scorecards, then optionally requests a text-only LLM review.
+RepoLens-Advanced is a Next.js + FastAPI tool for getting a grounded first read of a public GitHub repository: what it appears to do, how its source is organized, which engineering signals are present, and what setup gaps deserve attention. It performs a bounded shallow clone and static scan; it never executes repository code.
 
-## What changed in v2
+## Features
 
-- Quality, maintainability, scalability, architecture, and production-readiness scores now derive from scanned code and artifacts—not GitHub popularity, synthetic metadata, trained-model artifacts, or constant exception fallbacks.
-- Python source is analyzed with AST metrics, including function/class/import counts and cyclomatic branching. Other languages use documented syntax-pattern estimates.
-- Full repository counts include language, folder, extension, dependency, lockfile, CI, Docker, tests, license, environment template, and coverage-report signals.
-- Scanning is bounded; clone uses shallow/filter mode and a timeout. The analyzer never executes repo code.
-- LLM insight generation is optional. Static analysis works without an LLM credential, and LLM output cannot change scores.
-- The browser now calls same-origin `/api/analyze` and `/api/health` routes; the Next.js server forwards requests to FastAPI using `REPOLENS_API_URL`, avoiding the broken browser `localhost:8000` default and cross-origin fetch failures.
-- Frontend dependencies use the patched Next.js 15.5.27 and Tailwind CSS 4 toolchain; the committed npm lockfile currently passes `npm audit` with zero findings.
+- **Evidence-based analysis:** Python AST metrics, syntax-based estimates for other languages, real file/folder/language/dependency inventory, and dynamic scores for Quality, Maintainability, Scalability, Architecture, and Production Readiness.
+- **Project-purpose explanation:** A concise description is extracted from the README or supported project manifests. The response cites its source and confidence; when no description exists, RepoLens says so instead of inventing intent.
+- **Production-readiness quick fixes:** The results check root-level `README.md`, `LICENSE`, `.github/workflows/*.yml`/`.yaml`, `Dockerfile`, and `.gitignore`, with evidence, actionable instructions, and the score component each item affects.
+- **Shareable report:** Save a completed report to SQLite and receive a public, unlisted report URL. Anyone with that URL can view its saved analysis snapshot; source file contents are not stored in the report.
+- **README badge:** A dynamic SVG endpoint displays the latest saved quality score for a repository. The UI generates a Markdown snippet ready to copy into a README.
+- **PDF export:** The report page's **Save PDF** button opens the browser print dialog; choose **Save as PDF**.
+- **Optional LLM narrative:** The optional text-only LLM insight is separate from the static measurements and cannot change scores.
 
 ## Run locally
 
@@ -21,28 +21,27 @@ cd backend
 python -m venv .venv
 . .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env  # optional; configure an OpenAI-compatible endpoint for LLM text
+cp .env.example .env  # optional LLM and service settings
 uvicorn main:app --reload --port 8000
 ```
 
-`OPENAI_API_KEY` is optional. Set `CORS_ORIGINS` to comma-separated trusted frontend origins in deployment. Keep secrets in deployment environment variables, not in source.
+SQLite defaults to `backend/data/reports.sqlite3`. Set `REPORT_DB_PATH` to change it. `OPENAI_API_KEY` is optional. For production, mount persistent storage for the SQLite file and configure `CORS_ORIGINS` only if browsers will call FastAPI directly.
 
 ### Frontend
 
 ```bash
 cd frontend
 npm ci
-# set the Next.js server-side proxy target (copied from the example):
 cp .env.example .env.local
 # REPOLENS_API_URL=http://127.0.0.1:8000
 npm run dev
 ```
 
-For deployment, set the **server-side** `REPOLENS_API_URL` environment variable on the frontend service to the FastAPI service origin (for example `https://api.example.com`, without `/api`). The frontend then proxies requests on its own origin. The backend must be deployed and reachable; a frontend-only deployment cannot run the Python analyzer. Configure `CORS_ORIGINS` only if you intentionally call FastAPI directly from a separate browser origin.
+For deployment, set the **server-side** `REPOLENS_API_URL` on the frontend service to the FastAPI origin (without `/api`). The same-origin Next.js proxy forwards analysis, report, and badge requests. A frontend-only deployment cannot run the Python analyzer. See [frontend setup and troubleshooting](frontend/README.md).
 
-## API / system flow
+## API and data flow
 
-`POST /api/analyze` accepts `{"github_url":"https://github.com/owner/repo","include_llm":true}`. It returns dynamic metrics, score components and evidence, file/folder breakdowns, deterministic recommendations, and optional LLM insight status. See [backend/API_CONTRACT.md](backend/API_CONTRACT.md) for the JSON contract and [REFACTORING.md](REFACTORING.md) for a detailed architecture/data-flow and file-by-file change log.
+`POST /api/analyze` returns dynamic metrics, evidence-backed scorecards, repository breakdowns, `repository_overview`, and `quick_fix_checklist`. Saving is explicit: `POST /api/reports` persists a completed result, `GET /api/reports/{id}` retrieves it, and `/badge/{owner}/{repository}.svg` serves the latest saved score. Full schema and privacy/operations notes are in [backend/API_CONTRACT.md](backend/API_CONTRACT.md); architecture and file changelog are in [REFACTORING.md](REFACTORING.md).
 
 ## Tests
 
@@ -52,4 +51,12 @@ pip install -r requirements-dev.txt
 python -m unittest discover -s tests -v
 ```
 
-The project does not load the legacy saved ML models in the API request path; historical training code remains under `backend/ml/` but is not used for current scores.
+Frontend production build:
+
+```bash
+cd frontend
+npm ci
+npm run build
+```
+
+Current scores use the deterministic `static-v2` methodology. Historical model-training files under `backend/ml/` are not loaded or used by the analysis request path.

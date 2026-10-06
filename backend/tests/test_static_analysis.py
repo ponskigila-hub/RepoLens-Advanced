@@ -41,17 +41,33 @@ class StaticAnalysisTests(unittest.TestCase):
         (self.root / "LICENSE").write_text("sample license\n", encoding="utf-8")
         (self.root / "Dockerfile").write_text("FROM python:3.12\n", encoding="utf-8")
         (self.root / ".github/workflows/ci.yml").write_text("name: ci\n", encoding="utf-8")
+        (self.root / ".gitignore").write_text(".venv/\n", encoding="utf-8")
 
     def test_scanner_counts_real_files_and_detects_artifacts(self):
         self.fixture()
         scan = FileScanner(str(self.root)).scan()
         self.assertTrue(scan["success"])
-        self.assertEqual(scan["file_count"], 8)
+        self.assertEqual(scan["file_count"], 9)
         self.assertEqual(scan["source_file_count"], 1)
         self.assertEqual(scan["test_file_count"], 1)
         self.assertEqual(scan["dependencies"]["count"], 1)
         self.assertTrue(scan["artifacts"]["has_ci"])
+        self.assertTrue(scan["artifacts"]["has_github_workflow"])
+        self.assertTrue(scan["artifacts"]["has_gitignore"])
+        self.assertTrue(scan["artifacts"]["has_root_readme"])
+        self.assertTrue(scan["artifacts"]["has_root_license"])
+        self.assertTrue(scan["artifacts"]["has_root_dockerfile"])
+        self.assertTrue(scan["artifacts"]["has_root_gitignore"])
         self.assertTrue(scan["artifacts"]["has_docker"])
+
+    def test_root_level_source_file_does_not_crash_architecture_scoring(self):
+        self.fixture()
+        (self.root / "app.py").write_text("def main():\n    return 'ok'\n", encoding="utf-8")
+        scan = FileScanner(str(self.root)).scan()
+        self.assertTrue(any(folder["path"] == "." and folder["source_files"] for folder in scan["folder_breakdown"]))
+        result = self.analyzer.analyze(scan)
+        self.assertIn("architecture", result["scores"])
+        self.assertGreaterEqual(result["scores"]["architecture"]["score"], 0)
 
     def test_scores_change_when_repository_evidence_changes(self):
         self.fixture()
@@ -60,10 +76,31 @@ class StaticAnalysisTests(unittest.TestCase):
         (self.root / ".github/workflows/ci.yml").unlink()
         (self.root / "Dockerfile").unlink()
         (self.root / "poetry.lock").unlink()
+        (self.root / ".gitignore").unlink()
         reduced = self.analyzer.analyze(FileScanner(str(self.root)).scan())
         self.assertGreater(full["scores"]["production_readiness"]["score"], reduced["scores"]["production_readiness"]["score"])
         self.assertNotEqual(full["scores"]["quality"]["score"], 50.0)
-        self.assertEqual(full["score_methodology"]["version"], "static-v1")
+        self.assertEqual(full["score_methodology"]["version"], "static-v2")
+
+    def test_quick_fix_checklist_tracks_missing_files(self):
+        self.fixture()
+        for relative in ["README.md", "LICENSE", ".github/workflows/ci.yml", "Dockerfile", ".gitignore"]:
+            (self.root / relative).unlink()
+        scan = FileScanner(str(self.root)).scan()
+        checklist = analyze_route._quick_fix_checklist(scan)
+        self.assertEqual(checklist["completed"], 0)
+        self.assertEqual(checklist["total"], 5)
+        self.assertTrue(all(item["status"] == "missing" for item in checklist["items"]))
+
+    def test_project_overview_uses_manifest_description_without_readme(self):
+        self.fixture()
+        (self.root / "README.md").unlink()
+        (self.root / "package.json").write_text(json.dumps({"name": "sample-app", "description": "A focused manifest project description."}), encoding="utf-8")
+        scan = FileScanner(str(self.root)).scan()
+        overview = analyze_route._project_overview(scan, "sample/project", scan["technologies"])
+        self.assertEqual(overview["description"], "A focused manifest project description.")
+        self.assertEqual(overview["source"], "package.json")
+        self.assertEqual(overview["title"], "sample-app")
 
     def test_coverage_is_unknown_without_report_and_measured_with_lcov(self):
         self.fixture()
@@ -116,11 +153,15 @@ class StaticAnalysisTests(unittest.TestCase):
             analyze_route.repo_cloner.cleanup_repo = original_cleanup
         self.assertEqual(response.status_code, 200, response.text)
         data = response.json()
-        self.assertEqual(data["schema_version"], "1.0")
+        self.assertEqual(data["schema_version"], "1.1")
         self.assertIn("metrics", data)
         self.assertIn("folder_breakdown", data)
         self.assertIn("maintainability", data["scores"])
         self.assertEqual(data["insights"]["llm"]["status"], "not_requested")
+        self.assertEqual(data["repository_overview"]["purpose"], "Documented project.")
+        self.assertEqual(data["repository_overview"]["summary_source"], "README.md")
+        self.assertEqual(data["quick_fix_checklist"]["completed"], 5)
+        self.assertEqual(data["quick_fix_checklist"]["total"], 5)
 
 
 if __name__ == "__main__":

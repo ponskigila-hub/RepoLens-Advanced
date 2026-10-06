@@ -1,4 +1,4 @@
-import type { AnalysisRequest, AnalysisResult } from '@/types/analysis';
+import type { AnalysisRequest, AnalysisResult, PublicReport, SavedReport } from '@/types/analysis';
 
 export class ApiService {
   private readonly baseUrl: string;
@@ -53,6 +53,40 @@ export class ApiService {
       throw new Error(detail);
     }
     return data as { status: string; service: string; scoring?: string };
+  }
+
+  async saveReport(result: AnalysisResult): Promise<SavedReport> {
+    let response: Response;
+    try {
+      response = await fetch(this.endpoint('/api/reports'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ result }),
+        cache: 'no-store',
+      });
+    } catch {
+      throw new Error('The report could not be saved. Check the analysis service connection and try again.');
+    }
+    const data: unknown = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const detail = typeof data === 'object' && data !== null && 'detail' in data && typeof data.detail === 'string'
+        ? data.detail
+        : `Saving the report failed (${response.status}).`;
+      throw new Error(detail);
+    }
+    return data as SavedReport;
+  }
+
+  async getReport(reportId: string): Promise<PublicReport> {
+    const response = await fetch(this.endpoint(`/api/reports/${encodeURIComponent(reportId)}`), { cache: 'no-store' });
+    const data: unknown = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const detail = typeof data === 'object' && data !== null && 'detail' in data && typeof data.detail === 'string'
+        ? data.detail
+        : `Loading the report failed (${response.status}).`;
+      throw new Error(detail);
+    }
+    return data as PublicReport;
   }
 }
 

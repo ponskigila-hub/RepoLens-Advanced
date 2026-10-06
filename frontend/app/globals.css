@@ -42,3 +42,13 @@ body {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+@media print {
+  @page { margin: 14mm; }
+  html, body { min-height: auto !important; overflow: visible !important; color: #203229 !important; background: #fff !important; }
+  body { font-size: 10pt; }
+  .print-hide { display: none !important; }
+  .analysis-report { width: 100% !important; max-width: none !important; border: 0 !important; border-radius: 0 !important; box-shadow: none !important; overflow: visible !important; }
+  .analysis-report * { break-inside: avoid; }
+  a { color: inherit !important; text-decoration: none !important; }
+}

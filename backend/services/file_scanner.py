@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import tomllib
 from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
@@ -31,7 +32,7 @@ class FileScanner:
         "Cargo.toml", "go.mod", "pom.xml", "build.gradle", "Gemfile",
         "composer.json", "Dockerfile", "docker-compose.yml", "docker-compose.yaml",
         "tsconfig.json", "pytest.ini", "tox.ini", "Makefile", "Procfile",
-        ".env.example", ".env.sample", "example.env",
+        ".env.example", ".env.sample", "example.env", ".gitignore",
     }
     MAX_FILES = 12000
     MAX_FILE_BYTES = 512 * 1024
@@ -180,6 +181,29 @@ class FileScanner:
                 technologies.add({"go.mod":"Go modules", "cargo.toml":"Cargo", "pom.xml":"Maven", "build.gradle":"Gradle"}[name])
         return technologies
 
+    @staticmethod
+    def _project_metadata(inventory: list[dict[str, Any]]) -> dict[str, Any]:
+        """Read project identity from known manifests; never execute repository code."""
+        candidates = sorted(
+            (item for item in inventory if Path(item["name"]).name.lower() in {"package.json", "pyproject.toml", "cargo.toml"}),
+            key=lambda item: ("/" in item["path"], item["path"]),
+        )
+        for item in candidates:
+            try:
+                if Path(item["name"]).name.lower() == "package.json":
+                    data = json.loads(item.get("_content", "{}"))
+                    section = data
+                else:
+                    data = tomllib.loads(item.get("_content", ""))
+                    section = data.get("project", {}) if Path(item["name"]).name.lower() == "pyproject.toml" else data.get("package", {})
+            except (ValueError, TypeError, tomllib.TOMLDecodeError):
+                continue
+            description = section.get("description") if isinstance(section, dict) else None
+            project_name = section.get("name") if isinstance(section, dict) else None
+            if isinstance(description, str) and description.strip():
+                return {"name": project_name if isinstance(project_name, str) else None, "description": description.strip()[:1200], "manifest_path": item["path"]}
+        return {"name": None, "description": None, "manifest_path": None}
+
     def scan(self) -> dict[str, Any]:
         try:
             inventory, warnings = self._walk()
@@ -192,6 +216,7 @@ class FileScanner:
             lines_by_category: Counter[str] = Counter()
             source_items: list[dict[str, str]] = []
             readme = ""
+            readme_path = None
             for item in inventory:
                 content = item.get("_content", "")
                 public = {k: v for k, v in item.items() if not k.startswith("_")}
@@ -207,8 +232,11 @@ class FileScanner:
                 aggregate["size_bytes"] += item["size_bytes"]
                 aggregate["lines"] += item["lines"] or 0
                 if item["category"] == "source": aggregate["source_files"] += 1
-                if Path(item["name"]).name.lower().startswith("readme") and content and not readme:
-                    readme = content[:5000]
+                if Path(item["name"]).name.lower().startswith("readme"):
+                    if readme_path is None:
+                        readme_path = item["path"]
+                    if content and not readme:
+                        readme = content[:5000]
                 if item["category"] == "source" and content:
                     source_items.append({"path": item["path"], "language": item["language"], "content": content})
             source_files = [f for f in files if f["category"] == "source"]
@@ -218,23 +246,42 @@ class FileScanner:
             structure = [f"{f['path']}/ ({f['file_count']} files)" for f in folder_list[:60]]
             paths = [f["path"] for f in files]
             names = {Path(path).name.lower() for path in paths}
+            github_workflows = sorted(path for path in paths if path.startswith(".github/workflows/") and Path(path).suffix.lower() in {".yml", ".yaml"})
+            readme_paths = sorted(path for path in paths if Path(path).name.lower().startswith("readme"))
+            license_paths = sorted(path for path in paths if Path(path).name.lower().startswith("license") or Path(path).name.lower() == "copying")
+            gitignore_paths = sorted(path for path in paths if Path(path).name.lower() == ".gitignore")
+            dockerfile_paths = sorted(path for path in paths if Path(path).name.lower() == "dockerfile")
+            root_readme_paths = sorted(path for path in paths if Path(path).parent == Path(".") and Path(path).name.lower() == "readme.md")
+            root_license_paths = sorted(path for path in paths if Path(path).parent == Path(".") and (Path(path).name.lower().startswith("license") or Path(path).name.lower() == "copying"))
+            root_gitignore_paths = sorted(path for path in paths if Path(path).parent == Path(".") and Path(path).name.lower() == ".gitignore")
+            root_dockerfile_paths = sorted(path for path in paths if Path(path).parent == Path(".") and Path(path).name.lower() == "dockerfile")
             total_lines = sum((f["lines"] or 0) for f in files if f["category"] in {"source", "test"})
             return {
                 "success": True, "root_path": str(self.repo_path), "files": files,
                 "source_files": source_items, "folder_breakdown": folder_list,
                 "folder_structure": structure, "important_files": important,
-                "technologies": technologies, "readme_content": readme,
+                "technologies": technologies, "readme_content": readme, "readme_path": readme_path,
+                "project_metadata": self._project_metadata(inventory),
                 "file_count": len(files), "source_file_count": len(source_files),
                 "test_file_count": len(test_files), "total_lines": total_lines,
                 "lines_by_category": dict(lines_by_category),
                 "language_breakdown": dict(sorted(languages.items())),
                 "extension_breakdown": dict(extensions), "dependencies": dependencies,
                 "artifacts": {
-                    "has_ci": any(p.startswith((".github/workflows/", ".circleci/")) or Path(p).name in {".gitlab-ci.yml", "Jenkinsfile", "azure-pipelines.yml", "bitbucket-pipelines.yml"} for p in paths),
+                    "has_ci": bool(github_workflows) or any(p.startswith(".circleci/") or Path(p).name in {".gitlab-ci.yml", "Jenkinsfile", "azure-pipelines.yml", "bitbucket-pipelines.yml"} for p in paths),
+                    "has_github_workflow": bool(github_workflows),
+                    "github_workflows": github_workflows,
                     "has_docker": any("dockerfile" in n or n in {"docker-compose.yml", "docker-compose.yaml"} for n in names),
+                    "has_dockerfile": bool(dockerfile_paths),
+                    "has_root_dockerfile": bool(root_dockerfile_paths),
                     "has_tests": bool(test_files),
-                    "has_license": any(Path(p).name.lower().startswith("license") or Path(p).name.lower() == "copying" for p in paths),
-                    "has_readme": bool(readme),
+                    "has_license": bool(license_paths),
+                    "has_root_license": bool(root_license_paths),
+                    "has_readme": bool(readme_paths),
+                    "has_root_readme": bool(root_readme_paths),
+                    "has_gitignore": bool(gitignore_paths),
+                    "has_root_gitignore": bool(root_gitignore_paths),
+                    "checklist_paths": {"readme": root_readme_paths, "license": root_license_paths, "github_workflows": github_workflows[:20], "dockerfile": root_dockerfile_paths, "gitignore": root_gitignore_paths},
                     "has_env_example": bool(names & {".env.example", ".env.sample", "example.env"}),
                     "has_coverage_report": bool(names & {"coverage.xml", "lcov.info", "coverage-final.json", "coverage.json"}),
                     "has_security_workflow": any("codeql" in p.lower() or "dependabot" in p.lower() for p in paths),

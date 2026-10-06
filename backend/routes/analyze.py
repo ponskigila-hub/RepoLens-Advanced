@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import Counter
 from pathlib import Path
+import re
 from typing import Any
 from urllib.parse import urlparse
 
@@ -40,6 +41,7 @@ class AnalyzeResponse(BaseModel):
     files: list[dict[str, Any]]
     folder_breakdown: list[dict[str, Any]]
     insights: dict[str, Any]
+    quick_fix_checklist: dict[str, Any]
     ml_scores: dict[str, Any]
     repository_overview: dict[str, Any]
     creator_information: dict[str, Any]
@@ -79,6 +81,8 @@ async def analyze_repository(request: AnalyzeRequest):
             llm_state = await run_in_threadpool(analysis_service.generate_insights, prompt)
         insights["llm"] = llm_state
         files = scan.get("files", [])
+        project_overview = _project_overview(scan, clone["repo_name"], technologies=scan.get("technologies", []))
+        quick_fix_checklist = _quick_fix_checklist(scan)
         categories = Counter(f.get("category", "other") for f in files)
         important = [_important_file(f) for f in scan.get("important_files", [])[:30]]
         technologies = scan.get("technologies", [])
@@ -118,12 +122,13 @@ async def analyze_repository(request: AnalyzeRequest):
             "final_assessment": f"Static analysis rates this repository {score_band.lower()} for quality using {scan['file_count']} scanned files and {scan['total_lines']} source/test lines. Scores are evidence-based heuristics and do not claim runtime or human-review validation.",
         }
         return AnalyzeResponse(
-            success=True, schema_version="1.0", repository={"owner": owner, "name": name, "full_name": clone["repo_name"], "url": f"https://github.com/{owner}/{name}", "clone_depth": clone["clone_depth"]},
+            success=True, schema_version="1.1", repository={"owner": owner, "name": name, "full_name": clone["repo_name"], "url": f"https://github.com/{owner}/{name}", "clone_depth": clone["clone_depth"]},
             repo_info={"name": clone["repo_name"], "technologies": technologies, "file_count": scan["file_count"], "total_lines": scan["total_lines"], "is_mock": False, "ml_model_used": static["score_methodology"]["version"]},
             metrics=static["metrics"], scores=scores, score_methodology=static["score_methodology"],
             file_breakdown={"total": scan["file_count"], "by_category": dict(categories), "by_language": scan["language_breakdown"], "by_extension": scan["extension_breakdown"], "sample_limit": 1000},
-            files=files[:1000], folder_breakdown=scan["folder_breakdown"], insights=insights, ml_scores=ml_scores,
-            repository_overview={"name": clone["repo_name"], "purpose": insights["summary"], "problem_solved": "Not inferred from code alone; see README and LLM insight status.", "application_type": _application_type(technologies), "target_users": "Not determinable from static metrics alone.", "domain": "Not classified"},
+            files=files[:1000], folder_breakdown=scan["folder_breakdown"], insights=insights,
+            quick_fix_checklist=quick_fix_checklist, ml_scores=ml_scores,
+            repository_overview={"name": project_overview["title"], "purpose": project_overview["description"], "problem_solved": "Not separately inferred; use the cited project description as context.", "application_type": _application_type(technologies), "target_users": "Not determinable from static metrics alone.", "domain": "Not classified", "summary_source": project_overview["source"], "summary_confidence": project_overview["confidence"], "evidence": project_overview["evidence"]},
             creator_information={"owner": owner, "maturity_level": _score_band(score_values["quality"]), "coding_style": "Measured file and complexity metrics; stylistic linting is not run.", "open_source_ready": scan["artifacts"]["has_license"], "collaboration_ready": scan["artifacts"]["has_ci"] and scan["artifacts"]["has_tests"]},
             technology_stack=tech_stack,
             architecture_overview={"pattern": architecture["architecture_type"], "description": architecture["architecture_explanation"], "folder_structure": ", ".join(source_dirs) or "No nested source directories detected", "data_flow": "Static code review required for precise runtime data flow.", "scalability": architecture["scalability"]["scalability_notes"]},
@@ -140,6 +145,9 @@ def _build_insights(scan, static):
     metrics, artifacts = static["metrics"], scan["artifacts"]
     strengths, risks, recommendations = [], [], []
     if artifacts["has_readme"]: strengths.append(f"README documentation is present ({len(scan.get('readme_content', '').splitlines())} lines scanned).")
+    if not artifacts["has_readme"]:
+        risks.append("No README file was detected.")
+        recommendations.append(_suggestion("Documentation", "high", "Add a README.md describing the project, prerequisites, setup, and validation commands.", "Helps new contributors understand and run the repository."))
     if metrics["ast"]["average_cyclomatic_complexity"] is not None and metrics["ast"]["average_cyclomatic_complexity"] <= 5:
         strengths.append(f"Measured average cyclomatic complexity is {metrics['ast']['average_cyclomatic_complexity']}.")
     if artifacts["has_ci"]: strengths.append("A CI configuration file is present.")
@@ -158,6 +166,9 @@ def _build_insights(scan, static):
     if not artifacts["has_license"]:
         risks.append("No license file was detected.")
         recommendations.append(_suggestion("Governance", "medium", "Add an explicit license if redistribution or external contributions are intended.", "Clarifies reuse and contribution terms."))
+    if not artifacts.get("has_gitignore"):
+        risks.append("No .gitignore file was detected.")
+        recommendations.append(_suggestion("Repository hygiene", "medium", "Add a .gitignore for local secrets, caches, build output, and generated files.", "Reduces accidental commits of local or generated artifacts."))
     if not scan.get("dependencies", {}).get("lockfiles") and scan.get("dependencies", {}).get("count", 0):
         risks.append("Dependencies are declared without a recognized lockfile.")
         recommendations.append(_suggestion("Dependencies", "medium", "Commit a lockfile for application dependencies.", "Makes dependency resolution reproducible."))
@@ -173,6 +184,82 @@ def _build_insights(scan, static):
 
 def _suggestion(category, priority, suggestion, impact):
     return {"category": category, "priority": priority, "suggestion": suggestion, "impact": impact}
+
+
+def _project_overview(scan, repository_name, technologies):
+    readme = scan.get("readme_content", "")
+    metadata = scan.get("project_metadata", {})
+    title = repository_name
+    paragraph = []
+    collecting = False
+    for raw_line in readme.splitlines():
+        line = raw_line.strip()
+        if not line:
+            if collecting and paragraph:
+                break
+            continue
+        if line.startswith("#"):
+            if title == repository_name:
+                title = re.sub(r"^#+\s*", "", line).strip() or title
+            continue
+        if line.startswith(("```", "![", "<", "<!--", "|")) or "shields.io" in line.lower():
+            continue
+        clean = re.sub(r"!?\[([^\]]*)\]\([^)]*\)", r"\1", line)
+        clean = re.sub(r"<[^>]+>", "", clean)
+        clean = re.sub(r"^[>*+\-\s]+", "", clean)
+        clean = re.sub(r"[`*_~]", "", clean).strip()
+        if clean:
+            paragraph.append(clean)
+            collecting = True
+        if sum(len(part) for part in paragraph) >= 520:
+            break
+
+    if paragraph:
+        joined = re.sub(r"\s+", " ", " ".join(paragraph))
+        description = re.split(r"(?<=[.!?])\s+", joined, maxsplit=1)[0][:700]
+        source = scan.get("readme_path") or "README.md"
+        confidence = "high" if len(description) >= 40 else "medium"
+        evidence = [source]
+    elif metadata.get("description"):
+        description = metadata["description"][:700]
+        source = metadata.get("manifest_path") or "project manifest"
+        title = metadata.get("name") or title
+        confidence = "high"
+        evidence = [source]
+    else:
+        detected = ", ".join(technologies[:6]) or "no recognized languages/frameworks"
+        description = f"No explicit project description was found in the README or supported manifests. Static scan detected {detected}; product purpose needs maintainer-provided context."
+        source = "static repository inventory"
+        confidence = "low"
+        evidence = ["Detected languages and repository files; no descriptive README/manifest text"]
+    return {"title": title, "description": description, "source": source, "confidence": confidence, "evidence": evidence}
+
+
+def _quick_fix_checklist(scan):
+    artifacts = scan.get("artifacts", {})
+    evidence_paths = artifacts.get("checklist_paths", {})
+    checks = [
+        ("readme", "README.md", "has_root_readme", "Document the project purpose, setup, usage, and test commands.", "Root README.md"),
+        ("license", "LICENSE", "has_root_license", "Add a LICENSE file with terms chosen by the project maintainers.", "Root license file"),
+        ("github_actions", ".github/workflows/*.yml", "has_github_workflow", "Add a GitHub Actions workflow to run tests, lint, and build checks.", "GitHub Actions workflow"),
+        ("dockerfile", "Dockerfile", "has_root_dockerfile", "Add a Dockerfile if container deployment is intended; otherwise document the target deployment path.", "Root Dockerfile"),
+        ("gitignore", ".gitignore", "has_root_gitignore", "Add ignore rules for local secrets, caches, build output, and generated files.", "Root .gitignore"),
+    ]
+    items = []
+    for key, label, artifact_key, instruction, score_component in checks:
+        path_key = "github_workflows" if key == "github_actions" else key
+        paths = evidence_paths.get(path_key, [])
+        present = bool(artifacts.get(artifact_key))
+        items.append({
+            "id": key,
+            "file_pattern": label,
+            "complete": present,
+            "status": "present" if present else "missing",
+            "evidence": ", ".join(paths) if paths else ("Detected in scanned tree" if present else "No matching file in the scanned tree"),
+            "instruction": instruction,
+            "production_readiness_component": score_component,
+        })
+    return {"completed": sum(item["complete"] for item in items), "total": len(items), "items": items, "note": "Presence checks only; these items do not replace security, deployment, or license review."}
 
 
 def _important_file(item):

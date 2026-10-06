@@ -1,13 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import type { AnalysisResult, DynamicScore, ImprovementSuggestion, RepositoryFile, RepositoryFolder } from '@/types/analysis';
+import type { AnalysisResult, DynamicScore, ImprovementSuggestion, QuickFixItem, RepositoryFile, RepositoryFolder, SavedReport } from '@/types/analysis';
+import { apiService } from '@/services/api';
 
-type Tab = 'overview' | 'architecture' | 'files' | 'insights';
+type Tab = 'overview' | 'architecture' | 'files' | 'insights' | 'quick-fixes';
 const tabs: { id: Tab; label: string; icon: string }[] = [
   { id: 'overview', label: 'Overview', icon: '◉' },
   { id: 'architecture', label: 'Architecture', icon: '⌘' },
   { id: 'files', label: 'Files', icon: '▤' },
+  { id: 'quick-fixes', label: 'Quick fixes', icon: '☑' },
   { id: 'insights', label: 'Insights', icon: '✳' },
 ];
 
@@ -16,10 +18,15 @@ const scoreBand = (value?: number) => value === undefined ? 'Not available' : va
 const tone = (value?: number) => value === undefined ? 'text-[#66746b]' : value >= 80 ? 'text-[#47734f]' : value >= 60 ? 'text-[#946d35]' : 'text-[#a55a4e]';
 const barTone = (value?: number) => value === undefined ? 'from-[#a7ada0] to-[#c2c4b9]' : value >= 80 ? 'from-[#47734f] to-[#315d42]' : value >= 60 ? 'from-[#c49a4b] to-[#bd8450]' : 'from-[#bd7452] to-[#a95843]';
 
-export default function AnalysisCard({ result }: { result: AnalysisResult }) {
+export default function AnalysisCard({ result, allowSave = true }: { result: AnalysisResult; allowSave?: boolean }) {
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [fileQuery, setFileQuery] = useState('');
   const [fileCategory, setFileCategory] = useState('all');
+  const [savedReport, setSavedReport] = useState<SavedReport | null>(null);
+  const [shareLinks, setShareLinks] = useState<{ report: string; badge: string; markdown: string } | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [shareError, setShareError] = useState<string | null>(null);
+  const [copied, setCopied] = useState<string | null>(null);
 
   if (!result.success) {
     return <div role="alert" className="rounded-2xl border border-[#e8c9bd] bg-[#f8ece7] p-5 text-sm text-[#9f5146]">{result.error || 'Analysis could not be completed.'}</div>;
@@ -51,25 +58,68 @@ export default function AnalysisCard({ result }: { result: AnalysisResult }) {
   });
   const folderRows = (result.folder_breakdown ?? []).slice().sort((a, b) => b.lines - a.lines);
   const maxFolderLines = Math.max(...folderRows.map((folder) => folder.lines || 0), 1);
-  const summary = result.insights?.summary || result.repository_overview?.purpose || 'The scan completed without returning a repository summary.';
+  const summary = result.repository_overview?.purpose || result.insights?.summary || 'The scan completed without returning a project description.';
+  const project = result.repository_overview;
+  const quickFixes = result.quick_fix_checklist;
   const llm = result.insights?.llm;
   const qualityEvidence = result.scores?.quality?.components ?? result.scores?.overall_quality?.components ?? [];
 
+  const handleSaveAndShare = async () => {
+    setSaving(true);
+    setShareError(null);
+    try {
+      const saved = await apiService.saveReport(result);
+      const origin = window.location.origin;
+      const reportUrl = `${origin}${saved.report_url}`;
+      const badgeUrl = `${origin}${saved.badge_url}`;
+      setSavedReport(saved);
+      setShareLinks({ report: reportUrl, badge: badgeUrl, markdown: `[![RepoLens Score](${badgeUrl})](${reportUrl})` });
+    } catch (error) {
+      setShareError(error instanceof Error ? error.message : 'Could not save this report.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const copyValue = async (key: string, value: string) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(key);
+      window.setTimeout(() => setCopied(null), 1800);
+      setShareError(null);
+    } catch {
+      setShareError('Clipboard access was blocked. Select and copy the text manually.');
+    }
+  };
+
   return (
-    <section id="analysis-report" className="scroll-mt-8 overflow-hidden rounded-[28px] border border-[#e1e2d9] bg-[#fffefa] shadow-[0_28px_90px_rgba(32,50,41,.12)]">
+    <section id="analysis-report" className="analysis-report scroll-mt-8 overflow-hidden rounded-[28px] border border-[#e1e2d9] bg-[#fffefa] shadow-[0_28px_90px_rgba(32,50,41,.12)]">
       <header className="flex flex-col gap-4 border-b border-[#e5e3da] px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-7">
         <div className="min-w-0">
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[.18em] text-[#557b59]"><span className="h-1.5 w-1.5 rounded-full bg-[#47734f]" /> Analysis report</div>
           <h2 className="mt-2 truncate text-xl font-semibold text-[#203229] sm:text-2xl">{fullName}</h2>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="print-hide flex flex-wrap items-center gap-2">
           {repo?.url && <a href={repo.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-[#e1e2d9] px-3 py-2 text-sm text-[#45594c] transition hover:border-[#9fbea1] hover:text-[#203229]">Open on GitHub <span aria-hidden="true">↗</span></a>}
+          <button type="button" onClick={() => window.print()} className="rounded-lg border border-[#e1e2d9] px-3 py-2 text-sm text-[#45594c] transition hover:border-[#9fbea1]">Save PDF</button>
+          {allowSave && <button type="button" disabled={saving || !!savedReport} onClick={handleSaveAndShare} className="rounded-lg bg-[#315d42] px-3 py-2 text-sm font-semibold text-white transition hover:bg-[#274c35] disabled:cursor-not-allowed disabled:opacity-60">{saving ? 'Saving…' : savedReport ? 'Saved & shared' : 'Save & share'}</button>}
           <span className="rounded-lg border border-[#ceddce] bg-[#edf3e9] px-3 py-2 text-xs font-medium text-[#47734f]">{result.score_methodology?.version || result.ml_scores?.model_used || 'Static report'}</span>
         </div>
       </header>
 
+      {shareLinks && savedReport && <div className="print-hide border-b border-[#e5e3da] bg-[#f6f8f2] px-5 py-5 sm:px-7">
+        <div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="text-sm font-semibold text-[#203229]">Shareable report saved</h3><p className="mt-1 text-xs text-[#66746b]">Public, unlisted link — anyone with the URL can view this saved snapshot.</p></div><span className="rounded-full border border-[#ceddce] bg-[#edf3e9] px-2.5 py-1 text-[10px] text-[#47734f]">{new Date(savedReport.created_at).toLocaleString()}</span></div>
+        <div className="mt-4 grid gap-4 lg:grid-cols-2">
+          <div className="min-w-0"><label className="text-[10px] font-bold uppercase tracking-[.14em] text-[#7c877d]">Public report URL</label><div className="mt-1 flex gap-2"><input readOnly value={shareLinks.report} className="min-w-0 flex-1 rounded-lg border border-[#e1e2d9] bg-white px-3 py-2 text-xs text-[#304239]"/><button type="button" onClick={() => copyValue('report', shareLinks.report)} className="rounded-lg border border-[#c5d8c5] px-3 py-2 text-xs font-semibold text-[#47734f]">{copied === 'report' ? 'Copied' : 'Copy link'}</button></div></div>
+          <div className="min-w-0"><label className="text-[10px] font-bold uppercase tracking-[.14em] text-[#7c877d]">README badge Markdown</label><div className="mt-1 flex gap-2"><input readOnly value={shareLinks.markdown} className="min-w-0 flex-1 rounded-lg border border-[#e1e2d9] bg-white px-3 py-2 font-mono text-[10px] text-[#304239]"/><button type="button" onClick={() => copyValue('badge', shareLinks.markdown)} className="rounded-lg border border-[#c5d8c5] px-3 py-2 text-xs font-semibold text-[#47734f]">{copied === 'badge' ? 'Copied' : 'Copy badge'}</button></div></div>
+        </div>
+        <div className="mt-4 flex items-center gap-3"><img src={shareLinks.badge} alt={`RepoLens score badge for ${fullName}`} width="250" height="32"/><a href={shareLinks.report} target="_blank" rel="noreferrer" className="text-xs font-medium text-[#47734f] underline underline-offset-2">Open public report ↗</a></div>
+        {shareError && <p role="alert" className="mt-3 text-xs text-[#a55a4e]">{shareError}</p>}
+      </div>}
+      {shareError && !shareLinks && <p role="alert" className="print-hide border-b border-[#e8c9bd] bg-[#f8ece7] px-5 py-3 text-xs text-[#9f5146] sm:px-7">{shareError}</p>}
+
       <div className="grid gap-5 p-4 sm:p-6 lg:grid-cols-[230px_minmax(0,1fr)]">
-        <aside className="lg:sticky lg:top-6 lg:self-start">
+        <aside className="print-hide lg:sticky lg:top-6 lg:self-start">
           <p className="mb-3 hidden px-3 text-[10px] font-bold uppercase tracking-[.2em] text-[#7c877d] lg:block">Report sections</p>
           <nav aria-label="Report sections" className="flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible">
             {tabs.map((tab) => (
@@ -110,8 +160,9 @@ export default function AnalysisCard({ result }: { result: AnalysisResult }) {
 
               <div className="grid gap-4 xl:grid-cols-[1.25fr_.75fr]">
                 <div className="rounded-2xl border border-[#e5e3da] bg-[#faf9f4] p-5 sm:p-6">
-                  <SectionEyebrow>Repository at a glance</SectionEyebrow>
+                  <div className="flex flex-wrap items-start justify-between gap-3"><div><SectionEyebrow>What this project does</SectionEyebrow>{project?.name && <h3 className="mt-2 text-lg font-semibold text-[#203229]">{project.name}</h3>}</div><span className="rounded-full border border-[#e5e3da] bg-[#fffefa] px-2.5 py-1 text-[10px] text-[#66746b]">{project?.summary_confidence ? `${project.summary_confidence} confidence` : 'Evidence summary'}</span></div>
                   <p className="mt-3 max-w-3xl text-sm leading-7 text-[#45594c]">{summary}</p>
+                  <p className="mt-2 text-[10px] text-[#7c877d]">Source: {project?.summary_source || 'repository scan'}{project?.evidence?.length ? ` · Evidence: ${project.evidence.join(', ')}` : ''}</p>
                   <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
                     <MetricTile label="Files scanned" value={number(fileMetrics?.total ?? result.file_breakdown?.total ?? result.repo_info?.file_count)} />
                     <MetricTile label="Source files" value={number(fileMetrics?.source)} />
@@ -200,6 +251,21 @@ export default function AnalysisCard({ result }: { result: AnalysisResult }) {
             </div>
           )}
 
+          {activeTab === 'quick-fixes' && (
+            <div className="space-y-5">
+              <div className="rounded-2xl border border-[#ceddce] bg-gradient-to-br from-[#edf3e9] via-[#fffefa] to-[#f7eee7] p-5 sm:p-6">
+                <SectionEyebrow>Production readiness quick fixes</SectionEyebrow>
+                <div className="mt-2 flex flex-wrap items-end justify-between gap-3"><h3 className="text-xl font-semibold text-[#203229]">Repository setup checklist</h3><span className="rounded-full border border-[#c5d8c5] bg-white/70 px-3 py-1.5 text-xs font-semibold text-[#47734f]">{quickFixes?.completed ?? 0} / {quickFixes?.total ?? 0} present</span></div>
+                <p className="mt-2 max-w-3xl text-sm leading-6 text-[#66746b]">Each checkbox reflects file presence in the scanned repository. Adding these signals can improve the corresponding Production Readiness components; it is not a substitute for project-specific review.</p>
+              </div>
+              <div className="grid gap-3 lg:grid-cols-2">
+                {(quickFixes?.items ?? []).map((item) => <QuickFixCard key={item.id} item={item} />)}
+                {!quickFixes?.items?.length && <EmptyNotice>The API did not return a quick-fix checklist for this report.</EmptyNotice>}
+              </div>
+              {quickFixes?.note && <p className="text-xs leading-5 text-[#7c877d]">{quickFixes.note}</p>}
+            </div>
+          )}
+
           {activeTab === 'insights' && (
             <div className="space-y-5">
               <div className="rounded-2xl border border-[#ceddce] bg-gradient-to-br from-[#edf3e9] via-[#fffefa] to-[#f7eee7] p-5 sm:p-6">
@@ -250,6 +316,20 @@ function ScoreTile({ label, score, note }: { label: string; score?: number; note
 
 function SectionEyebrow({ children }: { children: React.ReactNode }) { return <h3 className="text-[11px] font-bold uppercase tracking-[.18em] text-[#66746b]">{children}</h3>; }
 function MetricTile({ label, value }: { label: string; value: string }) { return <div className="rounded-xl border border-[#e8e5dc] bg-[#f7f5ee] p-3"><p className="text-[10px] uppercase tracking-[.1em] text-[#7c877d]">{label}</p><p className="mt-1.5 break-words text-lg font-semibold text-[#203229]">{value}</p></div>; }
+
+function QuickFixCard({ item }: { item: QuickFixItem }) {
+  return <article className={`rounded-2xl border p-4 sm:p-5 ${item.complete ? 'border-[#ceddce] bg-[#f6f8f2]' : 'border-[#ead8c9] bg-[#fffaf6]'}`}>
+    <div className="flex items-start gap-3">
+      <input type="checkbox" checked={item.complete} disabled aria-label={`${item.file_pattern}: ${item.status}`} className="mt-1 h-4 w-4 accent-[#47734f]" />
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center justify-between gap-2"><h4 className="font-mono text-sm font-semibold text-[#203229]">{item.file_pattern}</h4><span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[.1em] ${item.complete ? 'bg-[#edf3e9] text-[#47734f]' : 'bg-[#f7eee7] text-[#a35e42]'}`}>{item.status}</span></div>
+        <p className="mt-2 text-sm leading-6 text-[#45594c]">{item.instruction}</p>
+        <p className="mt-2 break-words text-[11px] leading-5 text-[#7c877d]">Evidence: {item.evidence}</p>
+        <p className="mt-2 text-[10px] font-medium text-[#668369]">Production Readiness · {item.production_readiness_component}</p>
+      </div>
+    </div>
+  </article>;
+}
 
 function SignalRow({ label, detected, detail }: { label: string; detected?: boolean; detail?: string }) {
   const status = detected === undefined ? 'Not measured' : detected ? 'Detected' : 'Not detected';

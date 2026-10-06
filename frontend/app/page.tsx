@@ -54,7 +54,7 @@ export default function Home() {
     <main className="min-h-screen overflow-hidden bg-[#f4f1e8] text-[#203229] selection:bg-[#47734f]/25 selection:text-[#203229]">
       <div className="site-glow site-glow-teal" aria-hidden="true" />
       <div className="site-glow site-glow-violet" aria-hidden="true" />
-      <header className="relative z-10 mx-auto flex max-w-[1440px] items-center justify-between px-5 py-5 sm:px-8 lg:px-12">
+      <header className="print-hide relative z-10 mx-auto flex max-w-[1440px] items-center justify-between px-5 py-5 sm:px-8 lg:px-12">
         <a href="#top" className="group inline-flex items-center gap-3" aria-label="RepoLens home">
           <RepoLensMark className="h-11 w-11 transition-transform duration-300 group-hover:rotate-[-8deg]" />
           <span className="text-lg font-semibold tracking-tight text-[#203229]">RepoLens <span className="bg-gradient-to-r from-[#47734f] to-[#bd7452] bg-clip-text text-transparent">AI</span></span>
@@ -65,7 +65,7 @@ export default function Home() {
         </div>
       </header>
 
-      <section id="top" className="relative z-10 mx-auto grid max-w-[1440px] items-center gap-12 px-5 pb-16 pt-7 sm:px-8 sm:pt-12 lg:grid-cols-[.95fr_1.05fr] lg:gap-14 lg:px-12 lg:pb-24 lg:pt-10">
+      <section id="top" className="print-hide relative z-10 mx-auto grid max-w-[1440px] items-center gap-12 px-5 pb-16 pt-7 sm:px-8 sm:pt-12 lg:grid-cols-[.95fr_1.05fr] lg:gap-14 lg:px-12 lg:pb-24 lg:pt-10">
         <div className="max-w-2xl">
           <div className="inline-flex items-center gap-2 rounded-full border border-[#ceddce] bg-[#edf3e9] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[.18em] text-[#47734f]">
             <span className="h-1.5 w-1.5 rounded-full bg-[#47734f]" /> Understand. Analyze. Score. Ship.
@@ -105,7 +105,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="how-it-works" className="relative z-10 mx-auto max-w-[1440px] px-5 pb-12 sm:px-8 lg:px-12">
+      <section id="how-it-works" className="print-hide relative z-10 mx-auto max-w-[1440px] px-5 pb-12 sm:px-8 lg:px-12">
         <div className="grid gap-3 rounded-2xl border border-[#e5e3da] bg-[#faf9f4] p-4 sm:grid-cols-3 sm:p-5">
           <ProcessCard icon="↘" title="Paste a public URL" description="A depth-one snapshot keeps the scan focused and quick." />
           <ProcessCard icon="⌘" title="Read the evidence" description="AST, file structure, dependencies, tests, CI, and delivery signals." />
@@ -115,7 +115,7 @@ export default function Home() {
 
       {result && <div ref={reportRef} className="relative z-10 mx-auto max-w-[1440px] scroll-mt-6 px-4 pb-16 sm:px-8 lg:px-12"><AnalysisCard result={result} /></div>}
 
-      <footer className="relative z-10 border-t border-[#ece9e0] bg-[#f7f5ee]">
+      <footer className="print-hide relative z-10 border-t border-[#ece9e0] bg-[#f7f5ee]">
         <div className="mx-auto flex max-w-[1440px] flex-col gap-3 px-5 py-6 text-xs text-[#7c877d] sm:flex-row sm:items-center sm:justify-between sm:px-8 lg:px-12"><div className="flex items-center gap-2"><RepoLensMark className="h-6 w-6"/><span className="font-medium text-[#66746b]">RepoLens AI</span><span>· Evidence-first repository intelligence</span></div><span>Static analysis is a starting point, not a runtime or security audit.</span></div>
       </footer>
     </main>
@@ -127,7 +127,7 @@ function EmptyReportPreview() {
     <div className="flex items-center justify-between"><div><p className="text-[10px] font-semibold uppercase tracking-[.18em] text-[#7c877d]">Repository report</p><p className="mt-1 text-sm font-medium text-[#45594c]">Waiting for a repository</p></div><span className="rounded-md border border-[#e5e3da] px-2 py-1 text-[9px] text-[#7c877d]">No data yet</span></div>
     <div className="relative flex flex-1 flex-col items-center justify-center py-6 text-center">
       <div className="absolute inset-x-4 top-1/2 h-px bg-gradient-to-r from-transparent via-[#78936b]/20 to-transparent" aria-hidden="true" />
-      <div className="absolute left-[15%] top-[35%] h-2 w-2 rounded-full bg-[#edf3e9]0 shadow-[0_0_16px_rgba(71,115,79,.24)]" aria-hidden="true" />
+      <div className="absolute left-[15%] top-[35%] h-2 w-2 rounded-full bg-[#edf3e9] shadow-[0_0_16px_rgba(71,115,79,.24)]" aria-hidden="true" />
       <div className="absolute right-[17%] top-[43%] h-1.5 w-1.5 rounded-full bg-[#bd7452] shadow-[0_0_14px_rgba(189,116,82,.22)]" aria-hidden="true" />
       <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl border border-[#ceddce] bg-[#edf3e9] shadow-[0_0_50px_rgba(71,115,79,.10)]"><RepoLensMark className="h-12 w-12" /></div>
       <h3 className="mt-5 text-lg font-semibold text-[#203229]">Your repo, made readable</h3>

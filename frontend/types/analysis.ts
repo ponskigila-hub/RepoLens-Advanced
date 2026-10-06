@@ -41,6 +41,23 @@ export interface ImprovementSuggestion {
   impact: string;
 }
 
+export interface QuickFixItem {
+  id: string;
+  file_pattern: string;
+  complete: boolean;
+  status: 'present' | 'missing';
+  evidence: string;
+  instruction: string;
+  production_readiness_component: string;
+}
+
+export interface QuickFixChecklist {
+  completed: number;
+  total: number;
+  items: QuickFixItem[];
+  note: string;
+}
+
 export interface AnalysisMetrics {
   files?: { total?: number; source?: number; tests?: number; scanned_source?: number };
   lines?: { source_and_tests?: number; source?: number; tests?: number; comments?: number; comment_to_source_ratio?: number };
@@ -56,7 +73,25 @@ export interface AnalysisMetrics {
   };
   tests?: { files?: number; coverage_percent?: number | null; coverage_is_measured?: boolean };
   dependencies?: { count?: number; names?: string[]; manifests?: string[]; lockfiles?: string[] };
-  artifacts?: Record<string, boolean>;
+  artifacts?: {
+    has_readme?: boolean;
+    has_license?: boolean;
+    has_github_workflow?: boolean;
+    has_dockerfile?: boolean;
+    has_gitignore?: boolean;
+    has_root_readme?: boolean;
+    has_root_license?: boolean;
+    has_root_dockerfile?: boolean;
+    has_root_gitignore?: boolean;
+    has_tests?: boolean;
+    has_ci?: boolean;
+    has_docker?: boolean;
+    has_env_example?: boolean;
+    has_coverage_report?: boolean;
+    has_security_workflow?: boolean;
+    github_workflows?: string[];
+    checklist_paths?: Record<string, string[]>;
+  };
   language_breakdown?: Record<string, number>;
   maintenance_signals?: Record<string, unknown>;
   [key: string]: unknown;
@@ -83,6 +118,7 @@ export interface AnalysisResult {
     scan_warnings?: string[];
     llm?: { status?: string; provider?: string | null; model?: string | null; text?: string | null; error?: string | null };
   };
+  quick_fix_checklist?: QuickFixChecklist;
   ml_scores?: {
     overall_quality: number;
     maintainability: number;
@@ -97,7 +133,17 @@ export interface AnalysisResult {
       top_contributing_features: Array<{ name: string; score: number; weight?: number }>;
     };
   };
-  repository_overview?: { name?: string; purpose?: string; problem_solved?: string; application_type?: string; target_users?: string; domain?: string };
+  repository_overview?: {
+    name?: string;
+    purpose?: string;
+    problem_solved?: string;
+    application_type?: string;
+    target_users?: string;
+    domain?: string;
+    summary_source?: string;
+    summary_confidence?: 'high' | 'medium' | 'low';
+    evidence?: string[];
+  };
   architecture_overview?: { pattern?: string; description?: string; folder_structure?: string; data_flow?: string; scalability?: string };
   architecture_analysis?: {
     architecture_type?: string;
@@ -107,4 +153,18 @@ export interface AnalysisResult {
     [key: string]: unknown;
   };
   improvement_suggestions?: ImprovementSuggestion[];
+}
+
+export interface SavedReport {
+  id: string;
+  repository: { owner: string; name: string; full_name: string };
+  quality_score: number;
+  created_at: string;
+  report_url: string;
+  badge_url: string;
+  visibility: 'public_unlisted';
+}
+
+export interface PublicReport extends SavedReport {
+  result: AnalysisResult;
 }

@@ -57,7 +57,7 @@ class _ComplexityVisitor(ast.NodeVisitor):
 
 
 class StaticAnalyzer:
-    SCORE_VERSION = "static-v1"
+    SCORE_VERSION = "static-v2"
     BRANCH_PATTERN = re.compile(r"\b(if|else\s+if|elif|for|while|catch|case|when|except)\b|&&|\|\||\?\s*[^:?]+:")
     FUNCTION_PATTERN = re.compile(r"\b(?:function\s+[\w$]+|def\s+\w+|async\s+def\s+\w+|(?:public|private|protected|static|async|export|const|let|var|func|fn)\s+)+[\w$]+\s*\([^;{}]*\)\s*(?:->\s*[^:{]+)?\s*(?:\{|:)")
     ENTRYPOINTS = {"main.py", "main.ts", "main.js", "index.ts", "index.js", "app.py", "app.ts", "app.js", "server.py", "server.ts", "server.js", "manage.py", "program.cs", "main.go", "main.rs"}
@@ -191,7 +191,11 @@ class StaticAnalyzer:
         dep_density = deps.get("count", 0) / max(source_count, 1)
         dep_health = 1 / (1 + dep_density / 2) if deps.get("count", 0) else float(bool(deps.get("manifests")))
         lock_health = float(bool(deps.get("lockfiles")))
-        source_dirs = {str(Path(folder["path"]).parts[-1]).lower() for folder in folders if folder.get("source_files")}
+        source_dirs = {
+            Path(folder["path"]).name.lower()
+            for folder in folders
+            if folder.get("source_files") and Path(folder["path"]).parts
+        }
         layers = len(source_dirs & self.LAYER_NAMES)
         layering = min(layers / 4, 1)
         entrypoint_count = sum(1 for f in scan.get("files", []) if Path(f["path"]).name.lower() in self.ENTRYPOINTS)
@@ -207,7 +211,11 @@ class StaticAnalyzer:
             "documentation": documentation, "dependency_health": dep_health,
             "lockfile": lock_health, "layering": layering, "entrypoints": entrypoint_signal,
             "size_distribution": size_distribution, "ci": float(artifacts.get("has_ci", False)),
-            "docker": float(artifacts.get("has_docker", False)), "license": float(artifacts.get("has_license", False)),
+            "docker": float(artifacts.get("has_docker", False)), "license": float(artifacts.get("has_root_license", artifacts.get("has_license", False))),
+            "github_workflow": float(artifacts.get("has_github_workflow", False)),
+            "dockerfile": float(artifacts.get("has_root_dockerfile", artifacts.get("has_dockerfile", False))),
+            "gitignore": float(artifacts.get("has_root_gitignore", artifacts.get("has_gitignore", False))),
+            "readme_file": float(artifacts.get("has_root_readme", artifacts.get("has_readme", False))),
             "env_example": float(artifacts.get("has_env_example", False)),
             "security_workflow": float(artifacts.get("has_security_workflow", False)),
             "coverage": coverage / 100 if coverage is not None else 0,
@@ -226,7 +234,7 @@ class StaticAnalyzer:
             "maintainability": ("Maintainability", [("complexity_health", .30, "Cyclomatic complexity"), ("modularity", .25, "Source modularity"), ("test_quality", .20, "Tests / measured coverage"), ("documentation", .15, "Documentation"), ("size_distribution", .10, "Source-file size distribution")]),
             "scalability": ("Scalability", [("modularity", .30, "Source modularity"), ("layering", .20, "Layered boundaries"), ("docker", .15, "Container deployment evidence"), ("ci", .10, "Automated delivery evidence"), ("async_evidence", .10, "Concurrency / async code evidence"), ("dependency_health", .10, "Dependency footprint"), ("lockfile", .05, "Dependency lockfile")]),
             "architecture": ("Architecture", [("modularity", .25, "Source modularity"), ("layering", .25, "Architectural layer directories"), ("entrypoints", .20, "Entrypoint organization"), ("test_isolation", .15, "Test separation"), ("size_distribution", .15, "Source-file size distribution")]),
-            "production_readiness": ("Production Readiness", [("test_quality", .15, "Tests / measured coverage"), ("ci", .20, "CI/CD configuration"), ("docker", .15, "Container configuration"), ("lockfile", .10, "Dependency lockfile"), ("license", .10, "License file"), ("env_example", .10, "Environment template"), ("security_workflow", .10, "Security automation"), ("documentation", .10, "Documentation")]),
+            "production_readiness": ("Production Readiness", [("test_quality", .15, "Tests / measured coverage"), ("ci", .10, "CI/CD configuration"), ("github_workflow", .10, "GitHub Actions workflow"), ("dockerfile", .10, "Root Dockerfile"), ("lockfile", .10, "Dependency lockfile"), ("license", .10, "Root license file"), ("env_example", .10, "Environment template"), ("security_workflow", .10, "Security automation"), ("documentation", .05, "Documentation depth"), ("readme_file", .05, "Root README.md"), ("gitignore", .05, "Root .gitignore")]),
         }
         result = {}
         for key, (title, components) in definitions.items():
@@ -253,7 +261,11 @@ class StaticAnalyzer:
         if name == "async_evidence": return "Observed async/concurrency syntax per source file"
         if name == "ci": return f"CI configuration present={metrics['artifacts']['has_ci']}"
         if name == "docker": return f"Docker/container file present={metrics['artifacts']['has_docker']}"
-        if name == "license": return f"License file present={metrics['artifacts']['has_license']}"
+        if name == "github_workflow": return f"GitHub Actions workflow present={metrics['artifacts'].get('has_github_workflow', False)}"
+        if name == "dockerfile": return f"Root Dockerfile present={metrics['artifacts'].get('has_root_dockerfile', metrics['artifacts'].get('has_dockerfile', False))}"
+        if name == "gitignore": return f"Root .gitignore present={metrics['artifacts'].get('has_root_gitignore', metrics['artifacts'].get('has_gitignore', False))}"
+        if name == "readme_file": return f"Root README.md present={metrics['artifacts'].get('has_root_readme', metrics['artifacts']['has_readme'])}"
+        if name == "license": return f"Root license file present={metrics['artifacts'].get('has_root_license', metrics['artifacts']['has_license'])}"
         if name == "env_example": return f"Environment template present={metrics['artifacts']['has_env_example']}"
         if name == "security_workflow": return f"Security automation present={metrics['artifacts']['has_security_workflow']}"
         if name == "coverage": return f"Measured coverage={metrics['tests']['coverage_percent']}%"

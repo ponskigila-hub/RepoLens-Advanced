@@ -3,7 +3,7 @@ const backendOrigin = () => {
   return configured.trim().replace(/\/+$/, '');
 };
 
-export async function proxyBackend(path: '/api/analyze' | '/health', request?: Request, timeoutMs = 10_000) {
+export async function proxyBackend(path: string, request?: Request, timeoutMs = 10_000) {
   const headers = new Headers();
   if (request?.headers.get('content-type')) headers.set('content-type', request.headers.get('content-type')!);
 
@@ -17,7 +17,7 @@ export async function proxyBackend(path: '/api/analyze' | '/health', request?: R
     });
     const responseHeaders = new Headers({
       'content-type': response.headers.get('content-type') || 'application/json',
-      'cache-control': 'no-store, max-age=0',
+      'cache-control': response.headers.get('cache-control') || 'no-store, max-age=0',
     });
     return new Response(response.body, { status: response.status, headers: responseHeaders });
   } catch (error) {

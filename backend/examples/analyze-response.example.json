@@ -1,6 +1,6 @@
 {
   "success": true,
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "repository": {
     "owner": "ponskigila-hub",
     "name": "RepoLens-Advanced",
@@ -20,37 +20,37 @@
       "Tailwind CSS",
       "TypeScript"
     ],
-    "file_count": 78,
-    "total_lines": 4665,
+    "file_count": 79,
+    "total_lines": 3778,
     "is_mock": false,
-    "ml_model_used": "static-v1"
+    "ml_model_used": "static-v2"
   },
   "metrics": {
     "files": {
-      "total": 78,
-      "source": 39,
-      "tests": 2,
-      "scanned_source": 39
+      "total": 79,
+      "source": 38,
+      "tests": 3,
+      "scanned_source": 38
     },
     "lines": {
-      "source_and_tests": 4665,
-      "source": 4558,
-      "tests": 107,
-      "comments": 145,
-      "comment_to_source_ratio": 0.032
+      "source_and_tests": 3778,
+      "source": 3543,
+      "tests": 235,
+      "comments": 133,
+      "comment_to_source_ratio": 0.038
     },
     "ast": {
-      "python_files_parsed": 16,
+      "python_files_parsed": 18,
       "syntax_error_files": 0,
-      "functions": 92,
-      "classes": 14,
-      "imports": 186,
-      "average_cyclomatic_complexity": 5.12,
-      "maximum_cyclomatic_complexity": 32,
+      "functions": 116,
+      "classes": 16,
+      "imports": 182,
+      "average_cyclomatic_complexity": 5.69,
+      "maximum_cyclomatic_complexity": 48,
       "complexity_method": "Python AST branch counting; non-Python branching/function estimates from syntax patterns"
     },
     "tests": {
-      "files": 2,
+      "files": 3,
       "coverage_percent": null,
       "coverage_is_measured": false
     },
@@ -74,6 +74,7 @@
         "uvicorn"
       ],
       "manifests": [
+        "backend/requirements-dev.txt",
         "backend/requirements.txt",
         "frontend/package.json"
       ],
@@ -83,10 +84,29 @@
     },
     "artifacts": {
       "has_ci": false,
+      "has_github_workflow": false,
+      "github_workflows": [],
       "has_docker": true,
+      "has_dockerfile": true,
+      "has_root_dockerfile": false,
       "has_tests": true,
       "has_license": false,
+      "has_root_license": false,
       "has_readme": true,
+      "has_root_readme": true,
+      "has_gitignore": true,
+      "has_root_gitignore": true,
+      "checklist_paths": {
+        "readme": [
+          "README.md"
+        ],
+        "license": [],
+        "github_workflows": [],
+        "dockerfile": [],
+        "gitignore": [
+          ".gitignore"
+        ]
+      },
       "has_env_example": true,
       "has_coverage_report": false,
       "has_security_workflow": false
@@ -111,43 +131,43 @@
     "language_breakdown": {
       "CSS": 1,
       "JavaScript": 3,
-      "Python": 18,
-      "TypeScript": 19
+      "Python": 21,
+      "TypeScript": 16
     }
   },
   "scores": {
     "quality": {
-      "score": 61.9,
+      "score": 63.9,
       "components": [
         {
           "name": "Cyclomatic complexity",
-          "score": 70.6,
+          "score": 66.5,
           "weight": 0.2,
-          "evidence": "Average cyclomatic complexity: 5.12 across 92 functions"
+          "evidence": "Average cyclomatic complexity: 5.69 across 116 functions"
         },
         {
           "name": "Source modularity",
           "score": 67.0,
           "weight": 0.2,
-          "evidence": "39 source files across measured directories"
+          "evidence": "38 source files across measured directories"
         },
         {
           "name": "Tests / measured coverage",
-          "score": 10.3,
+          "score": 15.8,
           "weight": 0.2,
-          "evidence": "2 test files; no coverage report present"
+          "evidence": "3 test files; no coverage report present"
         },
         {
           "name": "Documentation",
-          "score": 65.2,
+          "score": 76.6,
           "weight": 0.15,
           "evidence": "README/documentation files and measured README length; has README=True"
         },
         {
           "name": "Dependency footprint",
-          "score": 83.9,
+          "score": 83.5,
           "weight": 0.15,
-          "evidence": "15 declared dependencies across 2 manifests"
+          "evidence": "15 declared dependencies across 3 manifests"
         },
         {
           "name": "Dependency lockfile",
@@ -158,29 +178,29 @@
       ]
     },
     "maintainability": {
-      "score": 59.8,
+      "score": 61.4,
       "components": [
         {
           "name": "Cyclomatic complexity",
-          "score": 70.6,
+          "score": 66.5,
           "weight": 0.3,
-          "evidence": "Average cyclomatic complexity: 5.12 across 92 functions"
+          "evidence": "Average cyclomatic complexity: 5.69 across 116 functions"
         },
         {
           "name": "Source modularity",
           "score": 67.0,
           "weight": 0.25,
-          "evidence": "39 source files across measured directories"
+          "evidence": "38 source files across measured directories"
         },
         {
           "name": "Tests / measured coverage",
-          "score": 10.3,
+          "score": 15.8,
           "weight": 0.2,
-          "evidence": "2 test files; no coverage report present"
+          "evidence": "3 test files; no coverage report present"
         },
         {
           "name": "Documentation",
-          "score": 65.2,
+          "score": 76.6,
           "weight": 0.15,
           "evidence": "README/documentation files and measured README length; has README=True"
         },
@@ -193,13 +213,13 @@
       ]
     },
     "scalability": {
-      "score": 70.5,
+      "score": 72.4,
       "components": [
         {
           "name": "Source modularity",
           "score": 67.0,
           "weight": 0.3,
-          "evidence": "39 source files across measured directories"
+          "evidence": "38 source files across measured directories"
         },
         {
           "name": "Layered boundaries",
@@ -221,15 +241,15 @@
         },
         {
           "name": "Concurrency / async code evidence",
-          "score": 20.5,
+          "score": 39.5,
           "weight": 0.1,
           "evidence": "Observed async/concurrency syntax per source file"
         },
         {
           "name": "Dependency footprint",
-          "score": 83.9,
+          "score": 83.5,
           "weight": 0.1,
-          "evidence": "15 declared dependencies across 2 manifests"
+          "evidence": "15 declared dependencies across 3 manifests"
         },
         {
           "name": "Dependency lockfile",
@@ -246,7 +266,7 @@
           "name": "Source modularity",
           "score": 67.0,
           "weight": 0.25,
-          "evidence": "39 source files across measured directories"
+          "evidence": "38 source files across measured directories"
         },
         {
           "name": "Architectural layer directories",
@@ -275,25 +295,31 @@
       ]
     },
     "production_readiness": {
-      "score": 43.1,
+      "score": 36.2,
       "components": [
         {
           "name": "Tests / measured coverage",
-          "score": 10.3,
+          "score": 15.8,
           "weight": 0.15,
-          "evidence": "2 test files; no coverage report present"
+          "evidence": "3 test files; no coverage report present"
         },
         {
           "name": "CI/CD configuration",
           "score": 0.0,
-          "weight": 0.2,
+          "weight": 0.1,
           "evidence": "CI configuration present=False"
         },
         {
-          "name": "Container configuration",
-          "score": 100.0,
-          "weight": 0.15,
-          "evidence": "Docker/container file present=True"
+          "name": "GitHub Actions workflow",
+          "score": 0.0,
+          "weight": 0.1,
+          "evidence": "GitHub Actions workflow present=False"
+        },
+        {
+          "name": "Root Dockerfile",
+          "score": 0.0,
+          "weight": 0.1,
+          "evidence": "Root Dockerfile present=False"
         },
         {
           "name": "Dependency lockfile",
@@ -302,10 +328,10 @@
           "evidence": "1 lockfiles found"
         },
         {
-          "name": "License file",
+          "name": "Root license file",
           "score": 0.0,
           "weight": 0.1,
-          "evidence": "License file present=False"
+          "evidence": "Root license file present=False"
         },
         {
           "name": "Environment template",
@@ -320,45 +346,57 @@
           "evidence": "Security automation present=False"
         },
         {
-          "name": "Documentation",
-          "score": 65.2,
-          "weight": 0.1,
+          "name": "Documentation depth",
+          "score": 76.6,
+          "weight": 0.05,
           "evidence": "README/documentation files and measured README length; has README=True"
+        },
+        {
+          "name": "Root README.md",
+          "score": 100.0,
+          "weight": 0.05,
+          "evidence": "Root README.md present=True"
+        },
+        {
+          "name": "Root .gitignore",
+          "score": 100.0,
+          "weight": 0.05,
+          "evidence": "Root .gitignore present=True"
         }
       ]
     },
     "overall_quality": {
-      "score": 61.9,
+      "score": 63.9,
       "components": [
         {
           "name": "Cyclomatic complexity",
-          "score": 70.6,
+          "score": 66.5,
           "weight": 0.2,
-          "evidence": "Average cyclomatic complexity: 5.12 across 92 functions"
+          "evidence": "Average cyclomatic complexity: 5.69 across 116 functions"
         },
         {
           "name": "Source modularity",
           "score": 67.0,
           "weight": 0.2,
-          "evidence": "39 source files across measured directories"
+          "evidence": "38 source files across measured directories"
         },
         {
           "name": "Tests / measured coverage",
-          "score": 10.3,
+          "score": 15.8,
           "weight": 0.2,
-          "evidence": "2 test files; no coverage report present"
+          "evidence": "3 test files; no coverage report present"
         },
         {
           "name": "Documentation",
-          "score": 65.2,
+          "score": 76.6,
           "weight": 0.15,
           "evidence": "README/documentation files and measured README length; has README=True"
         },
         {
           "name": "Dependency footprint",
-          "score": 83.9,
+          "score": 83.5,
           "weight": 0.15,
-          "evidence": "15 declared dependencies across 2 manifests"
+          "evidence": "15 declared dependencies across 3 manifests"
         },
         {
           "name": "Dependency lockfile",
@@ -370,7 +408,7 @@
     }
   },
   "score_methodology": {
-    "version": "static-v1",
+    "version": "static-v2",
     "method": "deterministic weighted scorecard computed from scanned source, AST metrics, repository structure, dependencies, tests, and delivery artifacts",
     "score_range": [
       0,
@@ -385,34 +423,34 @@
     "coverage_note": "Coverage contributes only when an actual supported coverage report is present; absent report is returned as null, not inferred."
   },
   "file_breakdown": {
-    "total": 78,
+    "total": 79,
     "by_category": {
+      "config": 6,
       "other": 29,
       "documentation": 3,
-      "config": 5,
-      "source": 39,
-      "test": 2
+      "source": 38,
+      "test": 3
     },
     "by_language": {
       "CSS": 1,
       "JavaScript": 3,
-      "Python": 18,
-      "TypeScript": 19
+      "Python": 21,
+      "TypeScript": 16
     },
     "by_extension": {
       "[no extension]": 3,
       ".md": 15,
       ".png": 1,
       ".example": 2,
-      ".py": 18,
-      ".txt": 3,
+      ".py": 21,
+      ".txt": 4,
       ".joblib": 8,
       ".json": 4,
       ".csv": 1,
-      ".ts": 3,
+      ".ts": 9,
       ".js": 3,
       ".css": 1,
-      ".tsx": 16
+      ".tsx": 7
     },
     "sample_limit": 1000
   },
@@ -421,9 +459,9 @@
       "path": ".gitignore",
       "name": ".gitignore",
       "extension": "",
-      "category": "other",
-      "size_bytes": 681,
-      "lines": null,
+      "category": "config",
+      "size_bytes": 758,
+      "lines": 74,
       "language": "Other"
     },
     {
@@ -512,8 +550,8 @@
       "name": "README.md",
       "extension": ".md",
       "category": "documentation",
-      "size_bytes": 2392,
-      "lines": 48,
+      "size_bytes": 3504,
+      "lines": 62,
       "language": "Other"
     },
     {
@@ -521,7 +559,7 @@
       "name": "REFACTORING.md",
       "extension": ".md",
       "category": "other",
-      "size_bytes": 6949,
+      "size_bytes": 11616,
       "lines": null,
       "language": "Other"
     },
@@ -557,8 +595,8 @@
       "name": ".env.example",
       "extension": ".example",
       "category": "config",
-      "size_bytes": 372,
-      "lines": 10,
+      "size_bytes": 478,
+      "lines": 12,
       "language": "Other"
     },
     {
@@ -566,7 +604,7 @@
       "name": "API_CONTRACT.md",
       "extension": ".md",
       "category": "other",
-      "size_bytes": 3577,
+      "size_bytes": 6313,
       "lines": null,
       "language": "Other"
     },
@@ -575,7 +613,7 @@
       "name": "Dockerfile",
       "extension": "",
       "category": "other",
-      "size_bytes": 375,
+      "size_bytes": 437,
       "lines": null,
       "language": "Other"
     },
@@ -593,9 +631,18 @@
       "name": "main.py",
       "extension": ".py",
       "category": "source",
-      "size_bytes": 1121,
-      "lines": 35,
+      "size_bytes": 1309,
+      "lines": 38,
       "language": "Python"
+    },
+    {
+      "path": "backend/requirements-dev.txt",
+      "name": "requirements-dev.txt",
+      "extension": ".txt",
+      "category": "other",
+      "size_bytes": 34,
+      "lines": null,
+      "language": "Other"
     },
     {
       "path": "backend/requirements-ml.txt",
@@ -710,7 +757,7 @@
       "name": "analyze-response.example.json",
       "extension": ".json",
       "category": "other",
-      "size_bytes": 47799,
+      "size_bytes": 51926,
       "lines": null,
       "language": "Other"
     },
@@ -719,8 +766,8 @@
       "name": "__init__.py",
       "extension": ".py",
       "category": "source",
-      "size_bytes": 461,
-      "lines": 20,
+      "size_bytes": 235,
+      "lines": 5,
       "language": "Python"
     },
     {
@@ -782,8 +829,17 @@
       "name": "analyze.py",
       "extension": ".py",
       "category": "source",
-      "size_bytes": 20578,
-      "lines": 259,
+      "size_bytes": 25732,
+      "lines": 346,
+      "language": "Python"
+    },
+    {
+      "path": "backend/routes/reports.py",
+      "name": "reports.py",
+      "extension": ".py",
+      "category": "source",
+      "size_bytes": 2864,
+      "lines": 69,
       "language": "Python"
     },
     {
@@ -800,8 +856,8 @@
       "name": "file_scanner.py",
       "extension": ".py",
       "category": "source",
-      "size_bytes": 13853,
-      "lines": 242,
+      "size_bytes": 17757,
+      "lines": 292,
       "language": "Python"
     },
     {
@@ -823,12 +879,30 @@
       "language": "Python"
     },
     {
+      "path": "backend/services/report_store.py",
+      "name": "report_store.py",
+      "extension": ".py",
+      "category": "source",
+      "size_bytes": 5309,
+      "lines": 108,
+      "language": "Python"
+    },
+    {
       "path": "backend/services/static_analyzer.py",
       "name": "static_analyzer.py",
       "extension": ".py",
       "category": "source",
-      "size_bytes": 17255,
-      "lines": 241,
+      "size_bytes": 19865,
+      "lines": 268,
+      "language": "Python"
+    },
+    {
+      "path": "backend/tests/test_reports.py",
+      "name": "test_reports.py",
+      "extension": ".py",
+      "category": "test",
+      "size_bytes": 2756,
+      "lines": 68,
       "language": "Python"
     },
     {
@@ -836,8 +910,8 @@
       "name": "test_static_analysis.py",
       "extension": ".py",
       "category": "test",
-      "size_bytes": 5093,
-      "lines": 99,
+      "size_bytes": 8685,
+      "lines": 159,
       "language": "Python"
     },
     {
@@ -872,8 +946,8 @@
       "name": ".env.example",
       "extension": ".example",
       "category": "config",
-      "size_bytes": 41,
-      "lines": 1,
+      "size_bytes": 189,
+      "lines": 3,
       "language": "Other"
     },
     {
@@ -881,8 +955,8 @@
       "name": "README.md",
       "extension": ".md",
       "category": "documentation",
-      "size_bytes": 2788,
-      "lines": 141,
+      "size_bytes": 3726,
+      "lines": 60,
       "language": "Other"
     },
     {
@@ -899,8 +973,8 @@
       "name": "next.config.js",
       "extension": ".js",
       "category": "source",
-      "size_bytes": 235,
-      "lines": 11,
+      "size_bytes": 144,
+      "lines": 7,
       "language": "JavaScript"
     },
     {
@@ -953,8 +1027,8 @@
       "name": "globals.css",
       "extension": ".css",
       "category": "source",
-      "size_bytes": 626,
-      "lines": 23,
+      "size_bytes": 2366,
+      "lines": 54,
       "language": "CSS"
     },
     {
@@ -962,8 +1036,8 @@
       "name": "layout.tsx",
       "extension": ".tsx",
       "category": "source",
-      "size_bytes": 657,
-      "lines": 25,
+      "size_bytes": 695,
+      "lines": 19,
       "language": "TypeScript"
     },
     {
@@ -971,8 +1045,62 @@
       "name": "page.tsx",
       "extension": ".tsx",
       "category": "source",
-      "size_bytes": 7035,
-      "lines": 177,
+      "size_bytes": 15722,
+      "lines": 158,
+      "language": "TypeScript"
+    },
+    {
+      "path": "frontend/app/api/analyze/route.ts",
+      "name": "route.ts",
+      "extension": ".ts",
+      "category": "source",
+      "size_bytes": 237,
+      "lines": 8,
+      "language": "TypeScript"
+    },
+    {
+      "path": "frontend/app/api/health/route.ts",
+      "name": "route.ts",
+      "extension": ".ts",
+      "category": "source",
+      "size_bytes": 215,
+      "lines": 8,
+      "language": "TypeScript"
+    },
+    {
+      "path": "frontend/app/api/reports/route.ts",
+      "name": "route.ts",
+      "extension": ".ts",
+      "category": "source",
+      "size_bytes": 203,
+      "lines": 7,
+      "language": "TypeScript"
+    },
+    {
+      "path": "frontend/app/api/reports/[reportId]/route.ts",
+      "name": "route.ts",
+      "extension": ".ts",
+      "category": "source",
+      "size_bytes": 533,
+      "lines": 14,
+      "language": "TypeScript"
+    },
+    {
+      "path": "frontend/app/badge/[owner]/[repo]/route.ts",
+      "name": "route.ts",
+      "extension": ".ts",
+      "category": "source",
+      "size_bytes": 696,
+      "lines": 15,
+      "language": "TypeScript"
+    },
+    {
+      "path": "frontend/app/reports/[reportId]/page.tsx",
+      "name": "page.tsx",
+      "extension": ".tsx",
+      "category": "source",
+      "size_bytes": 2762,
+      "lines": 45,
       "language": "TypeScript"
     },
     {
@@ -980,53 +1108,8 @@
       "name": "AnalysisCard.tsx",
       "extension": ".tsx",
       "category": "source",
-      "size_bytes": 8709,
-      "lines": 228,
-      "language": "TypeScript"
-    },
-    {
-      "path": "frontend/components/ArchitectureVisualization.tsx",
-      "name": "ArchitectureVisualization.tsx",
-      "extension": ".tsx",
-      "category": "source",
-      "size_bytes": 9395,
-      "lines": 210,
-      "language": "TypeScript"
-    },
-    {
-      "path": "frontend/components/EngineeringSummary.tsx",
-      "name": "EngineeringSummary.tsx",
-      "extension": ".tsx",
-      "category": "source",
-      "size_bytes": 7136,
-      "lines": 163,
-      "language": "TypeScript"
-    },
-    {
-      "path": "frontend/components/FeatureContributionCard.tsx",
-      "name": "FeatureContributionCard.tsx",
-      "extension": ".tsx",
-      "category": "source",
-      "size_bytes": 9324,
-      "lines": 221,
-      "language": "TypeScript"
-    },
-    {
-      "path": "frontend/components/ImportantFilesExplorer.tsx",
-      "name": "ImportantFilesExplorer.tsx",
-      "extension": ".tsx",
-      "category": "source",
-      "size_bytes": 5721,
-      "lines": 145,
-      "language": "TypeScript"
-    },
-    {
-      "path": "frontend/components/ImprovementSuggestions.tsx",
-      "name": "ImprovementSuggestions.tsx",
-      "extension": ".tsx",
-      "category": "source",
-      "size_bytes": 7819,
-      "lines": 163,
+      "size_bytes": 35548,
+      "lines": 362,
       "language": "TypeScript"
     },
     {
@@ -1034,26 +1117,8 @@
       "name": "LoadingSpinner.tsx",
       "extension": ".tsx",
       "category": "source",
-      "size_bytes": 784,
+      "size_bytes": 1394,
       "lines": 20,
-      "language": "TypeScript"
-    },
-    {
-      "path": "frontend/components/MLScoresCard.tsx",
-      "name": "MLScoresCard.tsx",
-      "extension": ".tsx",
-      "category": "source",
-      "size_bytes": 9061,
-      "lines": 211,
-      "language": "TypeScript"
-    },
-    {
-      "path": "frontend/components/OnboardingGuide.tsx",
-      "name": "OnboardingGuide.tsx",
-      "extension": ".tsx",
-      "category": "source",
-      "size_bytes": 4943,
-      "lines": 116,
       "language": "TypeScript"
     },
     {
@@ -1061,44 +1126,17 @@
       "name": "RepoInput.tsx",
       "extension": ".tsx",
       "category": "source",
-      "size_bytes": 4717,
-      "lines": 125,
-      "language": "TypeScript"
-    },
-    {
-      "path": "frontend/components/RepositorySummary.tsx",
-      "name": "RepositorySummary.tsx",
-      "extension": ".tsx",
-      "category": "source",
-      "size_bytes": 3649,
+      "size_bytes": 4612,
       "lines": 91,
       "language": "TypeScript"
     },
     {
-      "path": "frontend/components/SectionCard.tsx",
-      "name": "SectionCard.tsx",
+      "path": "frontend/components/RepoLensMark.tsx",
+      "name": "RepoLensMark.tsx",
       "extension": ".tsx",
       "category": "source",
-      "size_bytes": 677,
-      "lines": 22,
-      "language": "TypeScript"
-    },
-    {
-      "path": "frontend/components/SecurityAnalysisPanel.tsx",
-      "name": "SecurityAnalysisPanel.tsx",
-      "extension": ".tsx",
-      "category": "source",
-      "size_bytes": 7061,
-      "lines": 160,
-      "language": "TypeScript"
-    },
-    {
-      "path": "frontend/components/TechnologyStack.tsx",
-      "name": "TechnologyStack.tsx",
-      "extension": ".tsx",
-      "category": "source",
-      "size_bytes": 4669,
-      "lines": 115,
+      "size_bytes": 1270,
+      "lines": 27,
       "language": "TypeScript"
     },
     {
@@ -1106,8 +1144,17 @@
       "name": "api.ts",
       "extension": ".ts",
       "category": "source",
-      "size_bytes": 1486,
-      "lines": 38,
+      "size_bytes": 3650,
+      "lines": 93,
+      "language": "TypeScript"
+    },
+    {
+      "path": "frontend/services/backendProxy.ts",
+      "name": "backendProxy.ts",
+      "extension": ".ts",
+      "category": "source",
+      "size_bytes": 1468,
+      "lines": 30,
       "language": "TypeScript"
     },
     {
@@ -1115,8 +1162,8 @@
       "name": "analysis.ts",
       "extension": ".ts",
       "category": "source",
-      "size_bytes": 4788,
-      "lines": 208,
+      "size_bytes": 5211,
+      "lines": 170,
       "language": "TypeScript"
     }
   ],
@@ -1125,29 +1172,22 @@
       "path": ".",
       "file_count": 14,
       "source_files": 0,
-      "lines": 48,
-      "size_bytes": 81242
-    },
-    {
-      "path": "frontend/components",
-      "file_count": 14,
-      "source_files": 14,
-      "lines": 1990,
-      "size_bytes": 83665
+      "lines": 136,
+      "size_bytes": 87098
     },
     {
       "path": "backend",
-      "file_count": 9,
+      "file_count": 10,
       "source_files": 1,
-      "lines": 195,
-      "size_bytes": 9335
+      "lines": 200,
+      "size_bytes": 12461
     },
     {
       "path": "frontend",
       "file_count": 9,
       "source_files": 4,
-      "lines": 238,
-      "size_bytes": 61760
+      "lines": 155,
+      "size_bytes": 62755
     },
     {
       "path": "backend/backend/ml/models",
@@ -1160,22 +1200,43 @@
       "path": "backend/ml",
       "file_count": 7,
       "source_files": 7,
-      "lines": 1062,
-      "size_bytes": 38268
+      "lines": 1047,
+      "size_bytes": 38042
     },
     {
       "path": "backend/services",
-      "file_count": 5,
-      "source_files": 5,
-      "lines": 622,
-      "size_bytes": 38641
+      "file_count": 6,
+      "source_files": 6,
+      "lines": 807,
+      "size_bytes": 50464
+    },
+    {
+      "path": "frontend/components",
+      "file_count": 4,
+      "source_files": 4,
+      "lines": 500,
+      "size_bytes": 42824
     },
     {
       "path": "frontend/app",
       "file_count": 3,
       "source_files": 3,
-      "lines": 225,
-      "size_bytes": 8318
+      "lines": 231,
+      "size_bytes": 18783
+    },
+    {
+      "path": "backend/routes",
+      "file_count": 2,
+      "source_files": 2,
+      "lines": 415,
+      "size_bytes": 28596
+    },
+    {
+      "path": "backend/tests",
+      "file_count": 2,
+      "source_files": 0,
+      "lines": 227,
+      "size_bytes": 11441
     },
     {
       "path": "backend/utils",
@@ -1183,6 +1244,13 @@
       "source_files": 2,
       "lines": 79,
       "size_bytes": 2254
+    },
+    {
+      "path": "frontend/services",
+      "file_count": 2,
+      "source_files": 2,
+      "lines": 123,
+      "size_bytes": 5118
     },
     {
       "path": "assets",
@@ -1196,21 +1264,7 @@
       "file_count": 1,
       "source_files": 0,
       "lines": 0,
-      "size_bytes": 47799
-    },
-    {
-      "path": "backend/routes",
-      "file_count": 1,
-      "source_files": 1,
-      "lines": 259,
-      "size_bytes": 20578
-    },
-    {
-      "path": "backend/tests",
-      "file_count": 1,
-      "source_files": 0,
-      "lines": 99,
-      "size_bytes": 5093
+      "size_bytes": 51926
     },
     {
       "path": "data",
@@ -1220,25 +1274,60 @@
       "size_bytes": 70273806
     },
     {
-      "path": "frontend/services",
+      "path": "frontend/app/api/analyze",
       "file_count": 1,
       "source_files": 1,
-      "lines": 38,
-      "size_bytes": 1486
+      "lines": 8,
+      "size_bytes": 237
+    },
+    {
+      "path": "frontend/app/api/health",
+      "file_count": 1,
+      "source_files": 1,
+      "lines": 8,
+      "size_bytes": 215
+    },
+    {
+      "path": "frontend/app/api/reports",
+      "file_count": 1,
+      "source_files": 1,
+      "lines": 7,
+      "size_bytes": 203
+    },
+    {
+      "path": "frontend/app/api/reports/[reportId]",
+      "file_count": 1,
+      "source_files": 1,
+      "lines": 14,
+      "size_bytes": 533
+    },
+    {
+      "path": "frontend/app/badge/[owner]/[repo]",
+      "file_count": 1,
+      "source_files": 1,
+      "lines": 15,
+      "size_bytes": 696
+    },
+    {
+      "path": "frontend/app/reports/[reportId]",
+      "file_count": 1,
+      "source_files": 1,
+      "lines": 45,
+      "size_bytes": 2762
     },
     {
       "path": "frontend/types",
       "file_count": 1,
       "source_files": 1,
-      "lines": 208,
-      "size_bytes": 4788
+      "lines": 170,
+      "size_bytes": 5211
     }
   ],
   "insights": {
-    "summary": "Scanned 78 repository files, 39 source files, and 4665 source/test lines. Detected: Docker, FastAPI, JavaScript, Next.js, Python, React, Tailwind CSS, TypeScript.",
+    "summary": "Scanned 79 repository files, 38 source files, and 3778 source/test lines. Detected: Docker, FastAPI, JavaScript, Next.js, Python, React, Tailwind CSS, TypeScript.",
     "strengths": [
-      "README documentation is present (48 lines scanned).",
-      "2 test files were detected."
+      "README documentation is present (62 lines scanned).",
+      "3 test files were detected."
     ],
     "risks": [
       "No common CI/CD workflow file was detected.",
@@ -1255,7 +1344,7 @@
       {
         "category": "Testing",
         "priority": "medium",
-        "suggestion": "Publish coverage.xml or lcov.info from the test pipeline.",
+        "suggestion": "Publish coverage.xml, lcov.info, or a supported coverage JSON report from the test pipeline.",
         "impact": "Turns test presence into a measurable coverage signal."
       },
       {
@@ -1273,32 +1362,84 @@
       "error": null
     },
     "score_snapshot": {
-      "quality": 61.9,
-      "maintainability": 59.8,
-      "scalability": 70.5,
+      "quality": 63.9,
+      "maintainability": 61.4,
+      "scalability": 72.4,
       "architecture": 78.4,
-      "production_readiness": 43.1,
-      "overall_quality": 61.9
+      "production_readiness": 36.2,
+      "overall_quality": 63.9
     },
     "scan_warnings": []
   },
+  "quick_fix_checklist": {
+    "completed": 2,
+    "total": 5,
+    "items": [
+      {
+        "id": "readme",
+        "file_pattern": "README.md",
+        "complete": true,
+        "status": "present",
+        "evidence": "README.md",
+        "instruction": "Document the project purpose, setup, usage, and test commands.",
+        "production_readiness_component": "Root README.md"
+      },
+      {
+        "id": "license",
+        "file_pattern": "LICENSE",
+        "complete": false,
+        "status": "missing",
+        "evidence": "No matching file in the scanned tree",
+        "instruction": "Add a LICENSE file with terms chosen by the project maintainers.",
+        "production_readiness_component": "Root license file"
+      },
+      {
+        "id": "github_actions",
+        "file_pattern": ".github/workflows/*.yml",
+        "complete": false,
+        "status": "missing",
+        "evidence": "No matching file in the scanned tree",
+        "instruction": "Add a GitHub Actions workflow to run tests, lint, and build checks.",
+        "production_readiness_component": "GitHub Actions workflow"
+      },
+      {
+        "id": "dockerfile",
+        "file_pattern": "Dockerfile",
+        "complete": false,
+        "status": "missing",
+        "evidence": "No matching file in the scanned tree",
+        "instruction": "Add a Dockerfile if container deployment is intended; otherwise document the target deployment path.",
+        "production_readiness_component": "Root Dockerfile"
+      },
+      {
+        "id": "gitignore",
+        "file_pattern": ".gitignore",
+        "complete": true,
+        "status": "present",
+        "evidence": ".gitignore",
+        "instruction": "Add ignore rules for local secrets, caches, build output, and generated files.",
+        "production_readiness_component": "Root .gitignore"
+      }
+    ],
+    "note": "Presence checks only; these items do not replace security, deployment, or license review."
+  },
   "ml_scores": {
-    "overall_quality": 61.9,
-    "maintainability": 59.8,
-    "scalability": 70.5,
+    "overall_quality": 63.9,
+    "maintainability": 61.4,
+    "scalability": 72.4,
     "architecture": 78.4,
-    "production_readiness": 43.1,
+    "production_readiness": 36.2,
     "feature_contributions": {
       "positive_factors": [
         {
-          "factor": "Cyclomatic complexity",
+          "factor": "Documentation",
           "impact": "positive",
-          "description": "Average cyclomatic complexity: 5.12 across 92 functions"
+          "description": "README/documentation files and measured README length; has README=True"
         },
         {
           "factor": "Dependency footprint",
           "impact": "positive",
-          "description": "15 declared dependencies across 2 manifests"
+          "description": "15 declared dependencies across 3 manifests"
         },
         {
           "factor": "Dependency lockfile",
@@ -1310,13 +1451,13 @@
         {
           "factor": "Tests / measured coverage",
           "impact": "needs_attention",
-          "description": "2 test files; no coverage report present"
+          "description": "3 test files; no coverage report present"
         }
       ],
       "top_contributing_features": [
         {
           "name": "Cyclomatic complexity",
-          "score": 70.6,
+          "score": 66.5,
           "weight": 0.2
         },
         {
@@ -1326,17 +1467,17 @@
         },
         {
           "name": "Tests / measured coverage",
-          "score": 10.3,
+          "score": 15.8,
           "weight": 0.2
         },
         {
           "name": "Documentation",
-          "score": 65.2,
+          "score": 76.6,
           "weight": 0.15
         },
         {
           "name": "Dependency footprint",
-          "score": 83.9,
+          "score": 83.5,
           "weight": 0.15
         },
         {
@@ -1347,15 +1488,20 @@
       ]
     },
     "confidence": 1.0,
-    "model_used": "static-v1"
+    "model_used": "static-v2"
   },
   "repository_overview": {
-    "name": "ponskigila-hub/RepoLens-Advanced",
-    "purpose": "Scanned 78 repository files, 39 source files, and 4665 source/test lines. Detected: Docker, FastAPI, JavaScript, Next.js, Python, React, Tailwind CSS, TypeScript.",
-    "problem_solved": "Not inferred from code alone; see README and LLM insight status.",
+    "name": "RepoLens-Advanced",
+    "purpose": "RepoLens-Advanced is a Next.js + FastAPI tool for getting a grounded first read of a public GitHub repository: what it appears to do, how its source is organized, which engineering signals are present, and what setup gaps deserve attention.",
+    "problem_solved": "Not separately inferred; use the cited project description as context.",
     "application_type": "Web application",
     "target_users": "Not determinable from static metrics alone.",
-    "domain": "Not classified"
+    "domain": "Not classified",
+    "summary_source": "README.md",
+    "summary_confidence": "high",
+    "evidence": [
+      "README.md"
+    ]
   },
   "creator_information": {
     "owner": "ponskigila-hub",
@@ -1407,9 +1553,9 @@
       "structure_explanation": "Derived from the scanned directory tree."
     },
     "code_organization": {
-      "modularity_level": "Developing",
+      "modularity_level": "Moderate",
       "separation_of_concerns": "2 recognized architectural directories detected",
-      "reusability_score": 59.8
+      "reusability_score": 61.4
     },
     "scalability": {
       "horizontal_scalability": "Container configuration detected",
@@ -1417,8 +1563,8 @@
       "scalability_notes": "Score uses measured modularity, architecture directories, CI/container signals, dependency footprint, and concurrency syntax."
     },
     "strengths": [
-      "README documentation is present (48 lines scanned).",
-      "2 test files were detected."
+      "README documentation is present (62 lines scanned).",
+      "3 test files were detected."
     ],
     "weaknesses": [
       "No common CI/CD workflow file was detected.",
@@ -1428,25 +1574,39 @@
   },
   "important_files": [
     {
+      "file": "frontend/components/AnalysisCard.tsx",
+      "purpose": "source file (TypeScript)",
+      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
+      "size_bytes": 35548,
+      "lines": 362
+    },
+    {
       "file": "backend/routes/analyze.py",
       "purpose": "source file (Python)",
       "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
-      "size_bytes": 20578,
-      "lines": 259
+      "size_bytes": 25732,
+      "lines": 346
     },
     {
       "file": "backend/services/static_analyzer.py",
       "purpose": "source file (Python)",
       "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
-      "size_bytes": 17255,
-      "lines": 241
+      "size_bytes": 19865,
+      "lines": 268
     },
     {
       "file": "backend/services/file_scanner.py",
       "purpose": "source file (Python)",
       "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
-      "size_bytes": 13853,
-      "lines": 242
+      "size_bytes": 17757,
+      "lines": 292
+    },
+    {
+      "file": "frontend/app/page.tsx",
+      "purpose": "source file (TypeScript)",
+      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
+      "size_bytes": 15722,
+      "lines": 158
     },
     {
       "file": "backend/ml/model_trainer.py",
@@ -1463,39 +1623,11 @@
       "lines": 256
     },
     {
-      "file": "frontend/components/ArchitectureVisualization.tsx",
-      "purpose": "source file (TypeScript)",
+      "file": "backend/tests/test_static_analysis.py",
+      "purpose": "test file (Python)",
       "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
-      "size_bytes": 9395,
-      "lines": 210
-    },
-    {
-      "file": "frontend/components/FeatureContributionCard.tsx",
-      "purpose": "source file (TypeScript)",
-      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
-      "size_bytes": 9324,
-      "lines": 221
-    },
-    {
-      "file": "frontend/components/MLScoresCard.tsx",
-      "purpose": "source file (TypeScript)",
-      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
-      "size_bytes": 9061,
-      "lines": 211
-    },
-    {
-      "file": "frontend/components/AnalysisCard.tsx",
-      "purpose": "source file (TypeScript)",
-      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
-      "size_bytes": 8709,
-      "lines": 228
-    },
-    {
-      "file": "frontend/components/ImprovementSuggestions.tsx",
-      "purpose": "source file (TypeScript)",
-      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
-      "size_bytes": 7819,
-      "lines": 163
+      "size_bytes": 8685,
+      "lines": 159
     },
     {
       "file": "backend/ml/feature_engineering.py",
@@ -1505,27 +1637,6 @@
       "lines": 204
     },
     {
-      "file": "frontend/components/EngineeringSummary.tsx",
-      "purpose": "source file (TypeScript)",
-      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
-      "size_bytes": 7136,
-      "lines": 163
-    },
-    {
-      "file": "frontend/components/SecurityAnalysisPanel.tsx",
-      "purpose": "source file (TypeScript)",
-      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
-      "size_bytes": 7061,
-      "lines": 160
-    },
-    {
-      "file": "frontend/app/page.tsx",
-      "purpose": "source file (TypeScript)",
-      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
-      "size_bytes": 7035,
-      "lines": 177
-    },
-    {
       "file": "backend/ml/dataset_loader.py",
       "purpose": "source file (Python)",
       "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
@@ -1533,46 +1644,25 @@
       "lines": 165
     },
     {
-      "file": "frontend/components/ImportantFilesExplorer.tsx",
-      "purpose": "source file (TypeScript)",
+      "file": "backend/services/report_store.py",
+      "purpose": "source file (Python)",
       "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
-      "size_bytes": 5721,
-      "lines": 145
-    },
-    {
-      "file": "backend/tests/test_static_analysis.py",
-      "purpose": "test file (Python)",
-      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
-      "size_bytes": 5093,
-      "lines": 99
-    },
-    {
-      "file": "frontend/components/OnboardingGuide.tsx",
-      "purpose": "source file (TypeScript)",
-      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
-      "size_bytes": 4943,
-      "lines": 116
+      "size_bytes": 5309,
+      "lines": 108
     },
     {
       "file": "frontend/types/analysis.ts",
       "purpose": "source file (TypeScript)",
       "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
-      "size_bytes": 4788,
-      "lines": 208
+      "size_bytes": 5211,
+      "lines": 170
     },
     {
       "file": "frontend/components/RepoInput.tsx",
       "purpose": "source file (TypeScript)",
       "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
-      "size_bytes": 4717,
-      "lines": 125
-    },
-    {
-      "file": "frontend/components/TechnologyStack.tsx",
-      "purpose": "source file (TypeScript)",
-      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
-      "size_bytes": 4669,
-      "lines": 115
+      "size_bytes": 4612,
+      "lines": 91
     },
     {
       "file": "backend/services/repo_cloner.py",
@@ -1582,11 +1672,11 @@
       "lines": 75
     },
     {
-      "file": "frontend/components/RepositorySummary.tsx",
+      "file": "frontend/services/api.ts",
       "purpose": "source file (TypeScript)",
       "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
-      "size_bytes": 3649,
-      "lines": 91
+      "size_bytes": 3650,
+      "lines": 93
     },
     {
       "file": "backend/ml/ml_service.py",
@@ -1596,11 +1686,39 @@
       "lines": 52
     },
     {
+      "file": "backend/routes/reports.py",
+      "purpose": "source file (Python)",
+      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
+      "size_bytes": 2864,
+      "lines": 69
+    },
+    {
+      "file": "frontend/app/reports/[reportId]/page.tsx",
+      "purpose": "source file (TypeScript)",
+      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
+      "size_bytes": 2762,
+      "lines": 45
+    },
+    {
+      "file": "backend/tests/test_reports.py",
+      "purpose": "test file (Python)",
+      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
+      "size_bytes": 2756,
+      "lines": 68
+    },
+    {
       "file": "backend/services/analysis_service.py",
       "purpose": "source file (Python)",
       "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
       "size_bytes": 2387,
       "lines": 39
+    },
+    {
+      "file": "frontend/app/globals.css",
+      "purpose": "source file (CSS)",
+      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
+      "size_bytes": 2366,
+      "lines": 54
     },
     {
       "file": "backend/utils/cleanup.py",
@@ -1617,11 +1735,32 @@
       "lines": 25
     },
     {
-      "file": "frontend/services/api.ts",
+      "file": "frontend/services/backendProxy.ts",
       "purpose": "source file (TypeScript)",
       "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
-      "size_bytes": 1486,
+      "size_bytes": 1468,
+      "lines": 30
+    },
+    {
+      "file": "frontend/components/LoadingSpinner.tsx",
+      "purpose": "source file (TypeScript)",
+      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
+      "size_bytes": 1394,
+      "lines": 20
+    },
+    {
+      "file": "backend/main.py",
+      "purpose": "Application/API entry point",
+      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
+      "size_bytes": 1309,
       "lines": 38
+    },
+    {
+      "file": "frontend/components/RepoLensMark.tsx",
+      "purpose": "source file (TypeScript)",
+      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
+      "size_bytes": 1270,
+      "lines": 27
     },
     {
       "file": "backend/ml/train_models.py",
@@ -1631,23 +1770,30 @@
       "lines": 48
     },
     {
-      "file": "backend/main.py",
-      "purpose": "Application/API entry point",
+      "file": "frontend/tailwind.config.js",
+      "purpose": "source file (JavaScript)",
       "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
-      "size_bytes": 1121,
-      "lines": 35
+      "size_bytes": 765,
+      "lines": 18
+    },
+    {
+      "file": ".gitignore",
+      "purpose": "config file (Other)",
+      "importance": "Selected from repository structure and file type; not a dependency or execution claim.",
+      "size_bytes": 758,
+      "lines": 74
     }
   ],
   "onboarding_guide": [
     {
       "step": 1,
       "title": "Inspect project structure",
-      "description": "Review 16 measured folders and the important files list."
+      "description": "Review 22 measured folders and the important files list."
     },
     {
       "step": 2,
       "title": "Install dependencies",
-      "description": "Use manifests found: backend/requirements.txt, frontend/package.json."
+      "description": "Use manifests found: backend/requirements-dev.txt, backend/requirements.txt, frontend/package.json."
     },
     {
       "step": 3,
@@ -1669,7 +1815,7 @@
     {
       "type": "High cyclomatic complexity",
       "severity": "medium",
-      "description": "Maximum measured function complexity is 32.",
+      "description": "Maximum measured function complexity is 48.",
       "suggestion": "Split complex functions into smaller units and add focused tests."
     }
   ],
@@ -1699,7 +1845,7 @@
     {
       "category": "Testing",
       "priority": "medium",
-      "suggestion": "Publish coverage.xml or lcov.info from the test pipeline.",
+      "suggestion": "Publish coverage.xml, lcov.info, or a supported coverage JSON report from the test pipeline.",
       "impact": "Turns test presence into a measurable coverage signal."
     },
     {
@@ -1710,13 +1856,13 @@
     }
   ],
   "final_summary": {
-    "repository_quality_score": 62,
+    "repository_quality_score": 64,
     "architecture_quality_score": 78,
-    "maintainability_score": 60,
+    "maintainability_score": 61,
     "onboarding_difficulty": "Easy",
     "scalability_level": "Moderate",
-    "production_readiness": "Developing",
-    "final_assessment": "Static analysis rates this repository moderate for quality using 78 scanned files and 4665 source/test lines. Scores are evidence-based heuristics and do not claim runtime or human-review validation."
+    "production_readiness": "Limited",
+    "final_assessment": "Static analysis rates this repository moderate for quality using 79 scanned files and 3778 source/test lines. Scores are evidence-based heuristics and do not claim runtime or human-review validation."
   },
   "error": null
 }

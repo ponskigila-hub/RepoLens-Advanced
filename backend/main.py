@@ -2,6 +2,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routes.analyze import router as analyze_router
+from routes.reports import api_router as reports_router, badge_router
 import uvicorn
 
 app = FastAPI(
@@ -19,6 +20,8 @@ app.add_middleware(
     allow_headers=["Content-Type", "Authorization"],
 )
 app.include_router(analyze_router, prefix="/api", tags=["analysis"])
+app.include_router(reports_router, prefix="/api", tags=["reports"])
+app.include_router(badge_router, tags=["badges"])
 
 
 @app.get("/")
@@ -28,7 +31,7 @@ async def root():
 
 @app.get("/health")
 async def health():
-    return {"status": "healthy", "service": "RepoLens AI", "scoring": "static-v1"}
+    return {"status": "healthy", "service": "RepoLens AI", "scoring": "static-v2"}
 
 
 if __name__ == "__main__":

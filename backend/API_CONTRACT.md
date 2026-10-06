@@ -1,48 +1,89 @@
-# RepoLens Analyze API — contract v1.0
+# RepoLens API contract — v1.1
 
-## Request
+## Analyze a repository
 
 `POST /api/analyze` (`Content-Type: application/json`)
 
 ```json
 {
   "github_url": "https://github.com/owner/repository",
-  "include_llm": true,
+  "include_llm": false,
   "use_mock": false
 }
 ```
 
-- Only public GitHub HTTPS URLs in the form `github.com/{owner}/{repository}` are accepted.
-- `include_llm` enables an optional OpenAI-compatible text insight call. Scores are always computed locally.
-- `use_mock` is retained for backwards compatibility; `true` skips the optional LLM request. It never substitutes or changes scores.
+Only public HTTPS GitHub URLs of the form `github.com/{owner}/{repository}` are accepted. `include_llm` enables an optional text narrative; it never changes measurements or scores. `use_mock` remains a backwards-compatible flag that skips the optional LLM request; it does not return mock scores.
 
-## Response
+The response has `schema_version: "1.1"` and is defined by [the complete validated example](examples/analyze-response.example.json). Stable groups include:
 
-See the [complete validated JSON fixture](examples/analyze-response.example.json). The following top-level groups are stable; additive fields may appear in later minor schema versions.
-
-| Field | Shape and purpose |
+| Group | Description |
 |---|---|
-| `success`, `schema_version` | Status and payload version (`1.0`). |
-| `repository`, `repo_info` | Canonical owner/name/URL, depth-1 fetch info, technologies, file and line totals; `repo_info` preserves the prior client contract. |
-| `metrics` | Actual file/line/language/dependency/artifact measures; Python AST counts and complexity; observed test/coverage values; maintenance/security-pattern candidates. |
-| `scores` | `quality`, `overall_quality`, `maintainability`, `scalability`, `architecture`, `production_readiness`. Each is `{score: number, components: [{name, score, weight, evidence}]}` on a 0–100 scale. |
-| `score_methodology` | Version, calculation scope, excluded inputs, and coverage semantics. Current version: `static-v1`. |
-| `file_breakdown`, `files`, `folder_breakdown` | Counts by category/language/extension, a bounded (up to 1,000 entries) file list, and up to 100 folder aggregates. |
-| `insights` | Evidence-based summary, strengths, risks, prioritized recommendations, scan warnings, score snapshot, and `llm` request status/text. |
-| `ml_scores` | Compatibility alias for the former UI. Despite the legacy field name, `model_used` is `static-v1`; this is not an ML-model prediction. |
-| `repository_overview`, `creator_information`, `technology_stack`, `architecture_overview`, `architecture_analysis` | UI-ready interpretation fields. Unknown facts are explicitly labeled rather than guessed. |
-| `important_files`, `onboarding_guide`, `code_quality_analysis`, `security_analysis`, `performance_analysis`, `improvement_suggestions`, `final_summary` | Backwards-compatible dashboard data populated from scanned evidence. |
+| `repository`, `repo_info` | Canonical repository identity, URL, clone depth, technologies, and inventory totals. |
+| `repository_overview` | Concise project description sourced from the first README paragraph or a supported manifest (`package.json`, `pyproject.toml`, `Cargo.toml`), plus `summary_source`, `summary_confidence`, and `evidence`. If no description is found, the API says so and reports only detected technologies; it does not guess project intent. |
+| `metrics` | Observed file/line/language/dependency/artifact metrics, Python AST measures, coverage when a supported report exists, and maintenance/security-pattern candidates. |
+| `scores` | Quality, maintainability, scalability, architecture, and production-readiness weighted scorecards. Each component includes its score, weight, and evidence. Current method is `static-v2`. |
+| `quick_fix_checklist` | Five file-presence checks at the repository root: `README.md`, `LICENSE` (or `LICENSE.*`/`COPYING`), `.github/workflows/*.yml`/`.yaml`, `Dockerfile`, and `.gitignore`. Each item includes `complete`, `status`, evidence paths, a maintainer-directed instruction, and its Production Readiness component. |
+| `file_breakdown`, `files`, `folder_breakdown` | Totals by category/language/extension, up to 1,000 file rows, and up to 100 folder aggregates. |
+| `insights` | Deterministic strengths, risks, recommendations, scan limitations, score snapshot, and optional LLM state/text. |
+| Compatibility fields | `ml_scores`, architecture/onboarding/quality/security/performance summaries remain available; the `ml_scores` name is historical, not an ML prediction. |
 
-## Score interpretation and caveats
+The checklist only reports whether matching files exist. A present file is not a quality or safety certification. README documentation, license, GitHub Actions workflow, Dockerfile, and `.gitignore` signals contribute to the dynamic Production Readiness score; the contribution breakdown and evidence are returned under `scores.production_readiness.components`.
 
-Scores are deterministic weighted sums of observed signals. Every component includes its normalized score, weight, and evidence string. Missing evidence is not replaced by a constant default. `coverage_percent` is `null` unless an actual supported `coverage.xml`, `lcov.info`, or supported coverage JSON report is measured. `scanned_source` and `insights.scan_warnings` expose bounded/incomplete reads. Python complexity uses AST traversal; other language complexity/function counts are syntax-pattern estimates. This is not runtime profiling, execution of repository code, or a full security audit.
+## Save and retrieve a shareable report
 
-The API clones with depth 1 and caps the walk at 12,000 files and text reads at 24 MiB. Optional LLM errors are reported at `insights.llm` and do not turn a successful static scan into an error.
+Saving is explicit. The frontend sends the completed analysis response:
 
-## Errors
+`POST /api/reports` (`Content-Type: application/json`)
 
-- `422`: unsupported/invalid URL or request validation.
-- `400`: clone failure, inaccessible repository, or clone timeout.
-- `500`: scan or server-side processing failure.
+```json
+{ "result": { "success": true, "repository": { "full_name": "owner/repository" }, "scores": { "quality": { "score": 82.5 } } } }
+```
 
-FastAPI validation errors use its standard `detail` format. The browser app uses `NEXT_PUBLIC_API_URL` and calls `/api/analyze`.
+A successful save returns metadata such as:
+
+```json
+{
+  "id": "unguessable_report_id",
+  "repository": { "owner": "owner", "name": "repository", "full_name": "owner/repository" },
+  "quality_score": 82.5,
+  "created_at": "2026-10-06T05:00:00+00:00",
+  "report_url": "/reports/unguessable_report_id",
+  "badge_url": "/badge/owner/repository.svg",
+  "visibility": "public_unlisted"
+}
+```
+
+- `GET /api/reports/{id}` returns the saved metadata plus the immutable `result` snapshot.
+- The browser app exposes the public page at `/reports/{id}`. It contains **Save PDF**, which opens the browser print dialog; choose **Save as PDF**. The server does not render or store a PDF.
+- Reports are **public and unlisted**: anyone with the URL can view the saved metrics and repository metadata. The report does not include source-file contents. There is no authentication or delete endpoint in this initial implementation.
+- A report payload is limited to 3 MiB. Invalid/incomplete payloads return `422`; unknown IDs return `404`.
+
+SQLite is used by default at `backend/data/reports.sqlite3` (inside the backend container, `/app/data/reports.sqlite3`). Configure `REPORT_DB_PATH` to override it. Mount a persistent volume at the database directory in production; container-local storage can be lost when an instance is replaced. Keep the database out of source control and protect backups according to the fact that reports are public.
+
+## Dynamic README badge
+
+`GET /badge/{owner}/{repository}.svg` returns an SVG showing the quality score from the **latest saved report** for that repository. No badge exists until a report has been explicitly saved; before then the endpoint returns `404`.
+
+```md
+[![RepoLens Score](https://repolens.example/badge/owner/repository.svg)](https://repolens.example/reports/REPORT_ID)
+```
+
+The dashboard generates the actual Markdown snippet and copy buttons after saving. The SVG is served with a short public cache lifetime (five minutes).
+
+## Measurement and operational limits
+
+Scores are deterministic weighted sums of observed signals. Missing evidence is not silently replaced by defaults. `coverage_percent` remains `null` until an actual supported coverage report is measured. Python complexity uses AST traversal; other languages use documented syntax-pattern estimates. RepoLens does not execute repository code, install dependencies, run repository tests, profile runtime performance, or perform a full security audit.
+
+The API uses a depth-1 clone, caps inventory at 12,000 files and text reads at 24 MiB, and reports scan limitations. Optional LLM errors are isolated under `insights.llm` and do not invalidate a successful static scan.
+
+## Other routes and errors
+
+| Route | Purpose |
+|---|---|
+| `GET /health` | FastAPI health check. |
+| `POST /api/analyze` | Static analysis and optional LLM narrative. |
+| `POST /api/reports` | Save a completed report. |
+| `GET /api/reports/{id}` | Read a saved report. |
+| `GET /badge/{owner}/{repository}.svg` | Latest saved score as SVG. |
+
+`400` indicates clone/fetch failure, `404` an unknown report/badge, `422` invalid requests, `500` scan/server failure, and `503`/`504` are returned by the Next.js proxy when FastAPI is unavailable or times out. FastAPI validation errors use the standard `detail` shape.

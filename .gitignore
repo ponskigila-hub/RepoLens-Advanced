@@ -28,6 +28,9 @@ ENV/
 # Backend
 backend/temp_repos/
 backend/.env
+backend/data/*.sqlite3
+backend/data/*.sqlite3-wal
+backend/data/*.sqlite3-shm
 
 # Node
 node_modules/

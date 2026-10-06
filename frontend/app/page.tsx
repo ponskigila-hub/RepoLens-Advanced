@@ -5,6 +5,7 @@ import AnalysisCard from '@/components/AnalysisCard';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import RepoInput from '@/components/RepoInput';
 import RepoLensMark from '@/components/RepoLensMark';
+import ThemeToggle from '@/components/ThemeToggle';
 import { apiService } from '@/services/api';
 import type { AnalysisResult } from '@/types/analysis';
 
@@ -50,7 +51,7 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-[#f4f1e8] text-[#203229] selection:bg-[#47734f]/25 selection:text-[#203229]">
+    <main className="app-backdrop min-h-screen text-[#203229] selection:bg-[#47734f]/25 selection:text-[#203229]">
       <header className="print-hide mx-auto flex max-w-[1440px] items-center justify-between px-5 py-5 sm:px-8 lg:px-12">
         <a href="#top" className="inline-flex items-center gap-3" aria-label="RepoLens home">
           <RepoLensMark className="h-10 w-10" />
@@ -59,24 +60,21 @@ export default function Home() {
         </a>
         <div className="flex items-center gap-3">
           <a href="#how-it-works" className="hidden text-sm font-medium text-[#45594c] transition hover:text-[#203229] sm:inline">How it works</a>
-          <span aria-live="polite" className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-semibold ${apiStatus === 'online' ? 'border-[#c5d8c5] bg-[#edf3e9] text-[#315d42]' : apiStatus === 'offline' ? 'border-[#e8c9bd] bg-[#f8ece7] text-[#833a32]' : 'border-[#e1e2d9] bg-[#f6f5ee] text-[#45594c]'}`}>
-            <span className={`h-1.5 w-1.5 rounded-full ${apiStatus === 'online' ? 'bg-[#47734f]' : apiStatus === 'offline' ? 'bg-[#bd7452]' : 'bg-[#c49a4b]'}`} />
-            {apiStatus === 'checking' ? 'Checking service' : apiStatus === 'online' ? 'Service ready' : 'Service unavailable'}
-          </span>
+          <ThemeToggle />
         </div>
       </header>
 
       <section id="top" className="print-hide mx-auto grid max-w-[1440px] gap-8 px-5 pb-12 pt-8 sm:px-8 sm:pt-12 lg:grid-cols-[minmax(0,1.05fr)_minmax(360px,.8fr)] lg:gap-14 lg:px-12 lg:pb-16">
         <div className="max-w-3xl">
           <p className="text-xs font-bold uppercase tracking-[.16em] text-[#315d42]">Public GitHub repository analysis</p>
-          <h1 className="mt-4 max-w-3xl text-4xl font-semibold leading-[1.08] tracking-[-.045em] text-[#203229] sm:text-5xl lg:text-[3.75rem]">
-            Read the codebase, <span className="text-[#47734f]">not only its README.</span>
+          <h1 className="mt-4 max-w-3xl text-[2.15rem] font-semibold leading-[1.12] tracking-[-.04em] text-[#203229] sm:text-[2.75rem] lg:text-[3.35rem]">
+            Read the codebase, <span className="headline-gradient">not only its README.</span>
           </h1>
           <p className="mt-5 max-w-2xl text-base leading-7 text-[#45594c] sm:text-lg sm:leading-8">
             See what the repository documents, how its files and functions are organized, which tools it declares, and who maintains it. Documentation and code evidence are shown separately so gaps stay visible.
           </p>
 
-          <div id="analyze" className="mt-8 scroll-mt-6 rounded-[22px] border border-[#d9ddd2] bg-[#fffefa] p-4 shadow-[0_18px_55px_rgba(32,50,41,.09)] sm:p-5">
+          <div id="analyze" className="surface-paper-gradient mt-8 scroll-mt-6 rounded-[22px] border border-[#d9ddd2] bg-[#fffefa] p-4 shadow-[0_18px_55px_rgba(32,50,41,.09)] sm:p-5">
             <div className="mb-4 flex items-start gap-3 px-1">
               <div className="rounded-lg bg-[#edf3e9] p-2 text-[#315d42]"><GitHubGlyph /></div>
               <div><h2 className="text-sm font-semibold text-[#203229]">Analyze a public repository</h2><p className="mt-1 text-xs leading-5 text-[#59665d]">RepoLens reads a bounded snapshot. It never runs the repository code.</p></div>
@@ -92,7 +90,7 @@ export default function Home() {
           {isAnalyzing && <div className="mt-5 rounded-2xl border border-[#d9ddd2] bg-[#fffefa] p-5"><LoadingSpinner /></div>}
         </div>
 
-        <aside className="h-fit rounded-[22px] border border-[#d9ddd2] bg-[#faf9f4] p-5 sm:p-6 lg:mt-6">
+        <aside className="surface-paper-gradient h-fit rounded-[22px] border border-[#d9ddd2] bg-[#faf9f4] p-5 sm:p-6 lg:mt-6">
           <div className="flex items-center gap-3"><RepoLensMark className="h-8 w-8" /><div><h2 className="text-sm font-semibold text-[#203229]">What the report reads</h2><p className="mt-1 text-xs text-[#59665d]">Observed evidence, not generated sample scores.</p></div></div>
           <div className="mt-5 divide-y divide-[#e3e1d7]">
             {scanAreas.map((area) => <div key={area.number} className="flex gap-3 py-4 first:pt-0 last:pb-0"><span className="pt-0.5 font-mono text-[10px] font-semibold text-[#315d42]">{area.number}</span><div><h3 className="text-sm font-semibold text-[#304239]">{area.title}</h3><p className="mt-1 text-xs leading-5 text-[#59665d]">{area.detail}</p></div></div>)}
@@ -102,7 +100,7 @@ export default function Home() {
       </section>
 
       <section id="how-it-works" className="print-hide mx-auto max-w-[1440px] scroll-mt-8 px-5 pb-12 sm:px-8 lg:px-12">
-        <div className="grid gap-4 rounded-2xl border border-[#d9ddd2] bg-[#fffefa] p-5 sm:grid-cols-3 sm:p-6">
+        <div className="surface-paper-gradient grid gap-4 rounded-2xl border border-[#d9ddd2] bg-[#fffefa] p-5 sm:grid-cols-3 sm:p-6">
           <MethodStep number="1" title="Fetch a snapshot" text="A shallow clone and read-only GitHub metadata request; failures in metadata do not stop code analysis." />
           <MethodStep number="2" title="Map code and declarations" text="Inventory paths, identify supported function/class names, parse manifests, and compare literal framework mentions in the README." />
           <MethodStep number="3" title="Explain the evidence" text="Calculate static scorecards and label unavailable measurements. No code execution, test run, or runtime profiling." />

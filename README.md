@@ -43,7 +43,7 @@ The browser calls the same-origin Next.js API proxy. For deployment, set the **s
 
 ## API and architecture
 
-`POST /api/analyze` returns schema v1.2. The [API contract](backend/API_CONTRACT.md) documents `repository_overview`, `code_overview`, `github_metadata`, metrics, score evidence, checklist, and errors; a [complete response example](backend/examples/analyze-response.example.json) is maintained alongside it. Architecture and file-level changes are summarized in [REFACTORING.md](REFACTORING.md).
+`POST /api/analyze` returns schema v1.3. The dashboard groups evidence into **At a Glance**, **Architecture & Flow**, **Getting Started**, and **Hotspots & Fixes**; it includes source-attributed README feature bullets, language/runtime versions and logos, code structure, dynamic scores, and readiness items. The file tab indexes every returned path within the 12,000-file scan cap; file text is fetched only after selection through a bounded, guarded preview endpoint. Light/dark mode is available on live and saved reports. The [API contract](backend/API_CONTRACT.md) documents project-guide provenance, file-preview boundaries, sharing, metrics, and errors; a [complete response example](backend/examples/analyze-response.example.json) is maintained alongside it. Architecture and file-level changes are summarized in [REFACTORING.md](REFACTORING.md).
 
 To save/share, the UI calls `POST /api/reports`; `GET /api/reports/{id}` retrieves the snapshot. `/badge/{owner}/{repository}.svg` serves the latest saved quality score. Saved links are public and unlisted—anyone holding the URL can view them. Mount persistent storage for SQLite in production.
 

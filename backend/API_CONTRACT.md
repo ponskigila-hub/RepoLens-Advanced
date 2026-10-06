@@ -1,4 +1,4 @@
-# RepoLens API contract — v1.2
+# RepoLens API contract — v1.3
 
 ## Analyze a repository
 
@@ -14,7 +14,7 @@
 
 Only public HTTPS GitHub repository URLs are accepted. `include_llm` enables an optional text narrative; it never changes measurements or scores. `use_mock` is a backwards-compatible flag that skips optional LLM generation; it does not return mock scores.
 
-The response has `schema_version: "1.2"`; the [complete response fixture](examples/analyze-response.example.json) defines all returned fields. Stable groups include:
+The response has `schema_version: "1.3"`; the [complete response fixture](examples/analyze-response.example.json) defines all returned fields. Stable groups include:
 
 | Group | Description |
 |---|---|
@@ -24,9 +24,10 @@ The response has `schema_version: "1.2"`; the [complete response fixture](exampl
 | `github_metadata` | Best-effort public GitHub REST API data: `created_at`, owner login/type/profile, up to 10 named contributors and contribution counts, fetch/truncation status, source, and limitation note. API errors/rate limits do not fail repository analysis. |
 | `technology_stack` | Existing technology categories plus direct `frameworks` declarations with package, manifest, and section evidence; `framework_detection` distinguishes detected, not detected, and unavailable. |
 | `metrics` | Observed file/line/language/dependency/artifact metrics, Python AST measures, supported coverage reports, and static maintenance-pattern candidates. |
+| `project_guide` | README feature bullets with source paths, safe setup commands/package scripts, explicit runtime/language versions, direct dependencies with declared versions, and environment variable names from example templates only. Environment values are never returned. |
 | `scores` | Quality, maintainability, scalability, architecture, and production-readiness weighted scorecards. Components contain score, weight, and evidence. Method: `static-v2`. |
 | `quick_fix_checklist` | Five root-level file-presence checks: `README.md`, `LICENSE`/`LICENSE.*`/`COPYING`, `.github/workflows/*.yml`/`.yaml`, `Dockerfile`, and `.gitignore`. |
-| `file_breakdown`, `files`, `folder_breakdown` | Inventory totals, up to 1,000 file rows, and up to 100 folder aggregates. UI builds its expandable file tree from returned paths and marks the sample limit. |
+| `file_breakdown`, `files`, `folder_breakdown` | Inventory totals, every path within the bounded 12,000-file scan cap, and folder aggregates. Generated/vendor directories and symlinks are excluded. Source text is not included in analysis responses or saved reports. |
 | `insights` | Deterministic strengths, risks, recommendations, scan limitations, score snapshot, and isolated optional LLM state/text. |
 | Compatibility fields | Historical `ml_scores` and summary aliases remain available; they represent static-v2 values, not model predictions. |
 
@@ -56,6 +57,15 @@ Frameworks are recognized from direct declarations in supported `package.json`, 
 
 The quick-fix checklist reports presence only, not quality or certification. Checklist artifacts contribute to the dynamic Production Readiness score; evidence is returned under `scores.production_readiness.components`.
 
+## On-demand repository file preview
+
+`POST /api/file-preview` accepts `{"github_url":"https://github.com/owner/repository","path":"src/main.py"}`. It validates the same public GitHub URL boundary, performs a fresh depth-1 clone, returns one UTF-8 text file, and always removes the temporary clone. It does not execute or persist repository code.
+
+- Paths are repository-relative; traversal, symlinks, private-key formats, local `.env` files, binaries, and files over 256 KiB are rejected.
+- Files with secret-shaped assignments are heuristically redacted. This is a best-effort safeguard, not a guarantee that every secret is found.
+- The UI requests the content only after a user selects **View**. The inventory itself remains path-only and searchable/paginated.
+- `200` returns `{path, content, size_bytes, redacted_values, note}`; `403`, `413`, `415`, and `422` explain blocked path/content/size/request cases.
+
 ## Save and retrieve a shareable report
 
 Saving is explicit: `POST /api/reports` accepts the completed result JSON. A successful response returns metadata such as:
@@ -75,7 +85,7 @@ Saving is explicit: `POST /api/reports` accepts the completed result JSON. A suc
 - `GET /api/reports/{id}` returns saved metadata plus the immutable `result` snapshot.
 - The browser app exposes `/reports/{id}`. **Save PDF** opens the browser print dialog; choose **Save as PDF**. The server does not generate or store a PDF.
 - Reports are **public and unlisted**: anyone with the URL can view repository metadata and metrics. Source-file contents are not stored. There is no authentication or delete endpoint in this initial implementation.
-- Payloads are limited to 3 MiB. Invalid/incomplete payloads return `422`; unknown IDs return `404`.
+- Payloads are limited to 8 MiB to accommodate the bounded full path index. Invalid/incomplete payloads return `422`; unknown IDs return `404`.
 
 SQLite defaults to `backend/data/reports.sqlite3` (container path `/app/data/reports.sqlite3`). Configure `REPORT_DB_PATH` to override it and mount persistent storage in production.
 
@@ -101,6 +111,7 @@ The API uses a depth-1 clone, caps inventory at 12,000 files and text reads at 2
 |---|---|
 | `GET /health` | FastAPI health/methodology check. |
 | `POST /api/analyze` | Static analysis, optional LLM narrative, code map, and best-effort GitHub metadata. |
+| `POST /api/file-preview` | Fresh bounded clone and safe on-demand UTF-8 text preview for one selected file. |
 | `POST /api/reports` | Save completed report. |
 | `GET /api/reports/{id}` | Read saved report. |
 | `GET /badge/{owner}/{repository}.svg` | Latest saved score as SVG. |

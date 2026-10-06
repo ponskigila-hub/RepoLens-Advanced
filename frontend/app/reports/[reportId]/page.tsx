@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import AnalysisCard from '@/components/AnalysisCard';
 import RepoLensMark from '@/components/RepoLensMark';
+import ThemeToggle from '@/components/ThemeToggle';
 import { apiService } from '@/services/api';
 import type { PublicReport } from '@/types/analysis';
 
@@ -31,7 +32,7 @@ export default function PublicReportPage() {
     <div className="mx-auto max-w-[1440px]">
       <header className="print-hide mb-6 flex flex-wrap items-center justify-between gap-4">
         <a href="/" className="inline-flex items-center gap-2 text-sm font-semibold text-[#203229]"><RepoLensMark className="h-9 w-9" /> RepoLens <span className="text-[#47734f]">AI</span></a>
-        <a href="/" className="rounded-lg border border-[#d8ddd2] bg-[#fffefa] px-3 py-2 text-xs font-medium text-[#45594c] hover:border-[#9fbea1]">Analyze another repository</a>
+        <div className="flex flex-wrap items-center gap-2"><ThemeToggle /><a href="/" className="rounded-lg border border-[#d8ddd2] bg-[#fffefa] px-3 py-2 text-xs font-medium text-[#45594c] hover:border-[#9fbea1]">Analyze another repository</a></div>
       </header>
       <div className="mb-5 rounded-2xl border border-[#d8ddd2] bg-[#fffefa] p-4 text-xs leading-5 text-[#59665d] print-hide">
         <strong className="text-[#304239]">Public, unlisted report.</strong> Anyone with this link can view this saved analysis snapshot. It contains repository metadata and static metrics, not repository source contents.

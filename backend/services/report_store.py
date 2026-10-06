@@ -12,7 +12,7 @@ from typing import Any
 
 
 class ReportStore:
-    MAX_REPORT_BYTES = 3 * 1024 * 1024
+    MAX_REPORT_BYTES = 8 * 1024 * 1024
     REPO_NAME_RE = re.compile(r"^[A-Za-z0-9_.-]{1,100}/[A-Za-z0-9_.-]{1,100}$")
 
     def __init__(self, db_path: str | Path | None = None):

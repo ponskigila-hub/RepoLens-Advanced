@@ -25,8 +25,42 @@ body {
     radial-gradient(ellipse at 94% 18%, rgba(189, 116, 82, .08), transparent 34rem),
     var(--page-bg);
   font-feature-settings: "ss01" on, "cv11" on;
+  line-height: 1.5;
+  transition: background-color .28s ease, color .22s ease;
 }
 ::selection { background: rgba(71, 115, 79, .18); color: #203229; }
+h1, h2, h3 { text-wrap: balance; }
+p { text-wrap: pretty; }
+
+.app-backdrop {
+  background:
+    radial-gradient(ellipse at 12% 0%, rgba(71, 115, 79, .13), transparent 34rem),
+    radial-gradient(ellipse at 92% 11%, rgba(189, 116, 82, .12), transparent 33rem),
+    radial-gradient(ellipse at 68% 78%, rgba(190, 165, 103, .08), transparent 38rem),
+    linear-gradient(128deg, #f5f2e9 0%, #f8f6ef 42%, #f0f2e8 76%, #f5efe7 100%);
+}
+
+.surface-paper-gradient {
+  background-image: linear-gradient(132deg, #fffefa 0%, #faf9f4 52%, #eff3e9 100%);
+  background-size: 135% 135%;
+  background-position: 0% 50%;
+}
+
+.headline-gradient {
+  background-image: linear-gradient(100deg, #315d42 0%, #6c895d 55%, #bd7452 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+.active-forest-gradient {
+  background-image: linear-gradient(108deg, #315d42 0%, #47734f 58%, #718457 100%);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .surface-paper-gradient { transition: background-position .55s ease, border-color .25s ease, box-shadow .25s ease; }
+  .surface-paper-gradient:hover { background-position: 100% 50%; }
+}
 
 .site-glow { pointer-events: none; position: absolute; z-index: 0; width: 38rem; height: 38rem; border-radius: 9999px; filter: blur(105px); opacity: .09; }
 .site-glow-teal { left: -24rem; top: 24rem; background: #78936b; }
@@ -38,6 +72,98 @@ body {
 ::-webkit-scrollbar-track { background: #efede5; }
 ::-webkit-scrollbar-thumb { background: #c9c9bd; border: 2px solid #efede5; border-radius: 999px; }
 ::-webkit-scrollbar-thumb:hover { background: #a9b09f; }
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --page-bg: #101813;
+  --panel-bg: #19251d;
+  --panel-soft: #202e24;
+  --ink: #e7f0e8;
+  --muted: #b8c6bb;
+  --line: #394b3f;
+  --forest: #a7d4ad;
+  --forest-deep: #a7d4ad;
+  --terracotta: #efab8d;
+  background: var(--page-bg);
+}
+
+html[data-theme="dark"] body {
+  color: var(--ink);
+  background:
+    radial-gradient(ellipse at 8% 4%, rgba(102, 159, 112, .12), transparent 31rem),
+    radial-gradient(ellipse at 94% 18%, rgba(189, 116, 82, .09), transparent 34rem),
+    var(--page-bg);
+}
+
+html[data-theme="dark"] .app-backdrop {
+  background:
+    radial-gradient(ellipse at 12% 0%, rgba(102, 159, 112, .18), transparent 34rem),
+    radial-gradient(ellipse at 92% 11%, rgba(189, 116, 82, .13), transparent 33rem),
+    radial-gradient(ellipse at 68% 78%, rgba(154, 131, 84, .09), transparent 38rem),
+    linear-gradient(128deg, #101813 0%, #17231b 43%, #1b241c 76%, #211d19 100%);
+}
+
+html[data-theme="dark"] .surface-paper-gradient {
+  background-image: linear-gradient(132deg, #19251d 0%, #202e24 52%, #2a2b22 100%);
+}
+
+html[data-theme="dark"] .headline-gradient {
+  background-image: linear-gradient(100deg, #a7d4ad 0%, #d4d9a4 55%, #efab8d 100%);
+}
+
+html[data-theme="dark"] .active-forest-gradient {
+  background-image: linear-gradient(108deg, #315d42 0%, #47734f 58%, #665542 100%);
+}
+
+html[data-theme="dark"] ::selection { background: rgba(136, 194, 143, .35); color: #f4fff5; }
+html[data-theme="dark"] ::-webkit-scrollbar-track { background: #17221b; }
+html[data-theme="dark"] ::-webkit-scrollbar-thumb { background: #526658; border-color: #17221b; }
+
+html[data-theme="dark"] [class*="bg-[#fffefa]"],
+html[data-theme="dark"] [class~="bg-white"] { background-color: #19251d; }
+html[data-theme="dark"] [class*="bg-[#faf9f4]"],
+html[data-theme="dark"] [class*="bg-[#f7f8f3]"],
+html[data-theme="dark"] [class*="bg-[#f6f8f2]"],
+html[data-theme="dark"] [class*="bg-[#f3f7f1]"] { background-color: #202e24; }
+html[data-theme="dark"] [class*="bg-[#edf3e9]"],
+html[data-theme="dark"] [class*="bg-[#e8f0e6]"],
+html[data-theme="dark"] [class*="bg-[#e5eee2]"] { background-color: #2a3d2e; }
+html[data-theme="dark"] [class*="bg-[#f1efe7]"],
+html[data-theme="dark"] [class*="bg-[#eeece3]"],
+html[data-theme="dark"] [class*="bg-[#f7f5ee]"],
+html[data-theme="dark"] [class*="bg-[#f6f5ee]"],
+html[data-theme="dark"] [class*="bg-[#f4f1e8]"] { background-color: #17221b; }
+html[data-theme="dark"] [class*="bg-[#fbf5e8]"] { background-color: #382e1a; }
+html[data-theme="dark"] [class*="bg-[#fffaf6]"] { background-color: #38251f; }
+html[data-theme="dark"] [class*="bg-[#f8ece7]"] { background-color: #3a2521; }
+html[data-theme="dark"] [class*="bg-[#f7eee7]"] { background-color: #382820; }
+
+html[data-theme="dark"] [class*="text-[#203229]"],
+html[data-theme="dark"] [class*="text-[#304239]"] { color: #e7f0e8; }
+html[data-theme="dark"] [class*="text-[#45594c]"],
+html[data-theme="dark"] [class*="text-[#59665d]"],
+html[data-theme="dark"] [class*="text-[#66746b]"] { color: #b8c6bb; }
+html[data-theme="dark"] [class*="text-[#315d42]"],
+html[data-theme="dark"] [class*="text-[#47734f]"] { color: #a7d4ad; }
+html[data-theme="dark"] [class*="text-[#604515]"],
+html[data-theme="dark"] [class*="text-[#735017]"] { color: #f0d28a; }
+html[data-theme="dark"] [class*="text-[#833a32]"],
+html[data-theme="dark"] [class*="text-[#854830]"] { color: #ffb9a4; }
+
+html[data-theme="dark"] [class*="border-[#d9ddd2]"],
+html[data-theme="dark"] [class*="border-[#d8ddd2]"],
+html[data-theme="dark"] [class*="border-[#e3e1d7]"],
+html[data-theme="dark"] [class*="border-[#e1e2d9]"],
+html[data-theme="dark"] [class*="border-[#ceddce]"],
+html[data-theme="dark"] [class*="border-[#c5d8c5]"] { border-color: #3d5143; }
+html[data-theme="dark"] [class*="border-[#dfd1ad]"] { border-color: #6b5931; }
+html[data-theme="dark"] [class*="border-[#ead8c9]"],
+html[data-theme="dark"] [class*="border-[#e8c9bd]"] { border-color: #68423a; }
+html[data-theme="dark"] [class*="divide-[#e3e1d7]"] > :not(:last-child) { border-color: #394b3f; }
+
+@media (prefers-reduced-motion: no-preference) {
+  html[data-theme="dark"] body { transition: background-color .2s ease, color .2s ease; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }

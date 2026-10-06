@@ -14,6 +14,7 @@ import tomllib
 from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
+from services.project_guide import build_project_guide
 
 
 class FileScanner:
@@ -30,10 +31,12 @@ class FileScanner:
         ".vue", ".svelte", ".sh", ".sql",
     }
     CONFIG_NAMES = {
-        "package.json", "requirements.txt", "pyproject.toml", "Pipfile",
-        "Cargo.toml", "go.mod", "pom.xml", "build.gradle", "Gemfile",
-        "composer.json", "Dockerfile", "docker-compose.yml", "docker-compose.yaml",
-        "tsconfig.json", "pytest.ini", "tox.ini", "Makefile", "Procfile",
+        "package.json", "requirements.txt", "pyproject.toml", "pipfile",
+        "cargo.toml", "go.mod", "pom.xml", "build.gradle", "gemfile",
+        "composer.json", "dockerfile", "docker-compose.yml", "docker-compose.yaml",
+        "tsconfig.json", "pytest.ini", "tox.ini", "makefile", "procfile",
+        "requirements-dev.txt", ".python-version", "python-version", ".node-version", ".nvmrc",
+        ".ruby-version", ".tool-versions", "build.gradle.kts",
         ".env.example", ".env.sample", "example.env", ".gitignore",
     }
     MAX_FILES = 12000
@@ -494,6 +497,7 @@ class FileScanner:
                     "has_coverage_report": bool(names & {"coverage.xml", "lcov.info", "coverage-final.json", "coverage.json"}),
                     "has_security_workflow": any("codeql" in p.lower() or "dependabot" in p.lower() for p in paths),
                 },
+                "project_guide": build_project_guide(inventory),
                 "warnings": warnings,
             }
         except Exception as exc:

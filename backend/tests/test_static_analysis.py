@@ -232,7 +232,7 @@ class StaticAnalysisTests(unittest.TestCase):
             analyze_route.github_metadata_service.fetch = original_metadata
         self.assertEqual(response.status_code, 200, response.text)
         data = response.json()
-        self.assertEqual(data["schema_version"], "1.2")
+        self.assertEqual(data["schema_version"], "1.3")
         self.assertIn("metrics", data)
         self.assertIn("folder_breakdown", data)
         self.assertIn("maintainability", data["scores"])
@@ -246,6 +246,10 @@ class StaticAnalysisTests(unittest.TestCase):
         self.assertEqual(data["github_metadata"]["created_at"], "2020-01-02T03:04:05Z")
         self.assertEqual(data["code_overview"]["status"], "available")
         self.assertGreaterEqual(data["code_overview"]["symbols"]["count"], 1)
+        self.assertEqual(len(data["files"]), data["file_breakdown"]["total"])
+        self.assertEqual(data["file_breakdown"]["sample_limit"], FileScanner.MAX_FILES)
+        self.assertIn("project_guide", data)
+        self.assertIn("language_versions", data["project_guide"])
 
 
 if __name__ == "__main__":

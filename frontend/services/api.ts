@@ -1,4 +1,4 @@
-import type { AnalysisRequest, AnalysisResult, PublicReport, SavedReport } from '@/types/analysis';
+import type { AnalysisRequest, AnalysisResult, FilePreview, PublicReport, SavedReport } from '@/types/analysis';
 
 export class ApiService {
   private readonly baseUrl: string;
@@ -87,6 +87,28 @@ export class ApiService {
       throw new Error(detail);
     }
     return data as PublicReport;
+  }
+
+  async getFilePreview(githubUrl: string, path: string): Promise<FilePreview> {
+    let response: Response;
+    try {
+      response = await fetch(this.endpoint('/api/file-preview'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ github_url: githubUrl, path }),
+        cache: 'no-store',
+      });
+    } catch {
+      throw new Error('The file preview service is unreachable.');
+    }
+    const data: unknown = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const detail = typeof data === 'object' && data !== null && 'detail' in data && typeof data.detail === 'string'
+        ? data.detail
+        : `File preview failed (${response.status}).`;
+      throw new Error(detail);
+    }
+    return data as FilePreview;
   }
 }
 

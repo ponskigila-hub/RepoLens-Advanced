@@ -26,6 +26,26 @@ export interface RepositoryFile {
   language?: string;
 }
 
+export interface FilePreview {
+  path: string;
+  content: string;
+  size_bytes: number;
+  redacted_values: number;
+  note: string;
+}
+
+export interface ProjectGuide {
+  features: Array<{ text: string; source: string }>;
+  feature_source?: string | null;
+  feature_note?: string;
+  commands: Array<{ title: string; command: string; source: string; declared_command?: string }>;
+  scripts: Array<{ name: string; command: string; declared_command: string; source: string }>;
+  environment_variables: Array<{ name: string; source: string }>;
+  language_versions: Array<{ name: string; version: string; source: string }>;
+  direct_dependencies: Array<{ name: string; version: string; manifest: string; section: string }>;
+  environment_note?: string;
+}
+
 export interface RepositoryFolder {
   path: string;
   file_count: number;
@@ -93,7 +113,13 @@ export interface AnalysisMetrics {
     checklist_paths?: Record<string, string[]>;
   };
   language_breakdown?: Record<string, number>;
-  maintenance_signals?: Record<string, unknown>;
+  maintenance_signals?: {
+    large_source_files_over_500_lines?: Array<{ path: string; lines: number }>;
+    todo_markers?: number;
+    todo_samples?: Array<{ path: string; line: number; marker: string }>;
+    credential_literal_candidates?: Array<{ path: string; line: number; reason: string }>;
+    [key: string]: unknown;
+  };
   [key: string]: unknown;
 }
 
@@ -203,6 +229,7 @@ export interface AnalysisResult {
     llm?: { status?: string; provider?: string | null; model?: string | null; text?: string | null; error?: string | null };
   };
   quick_fix_checklist?: QuickFixChecklist;
+  project_guide?: ProjectGuide;
   ml_scores?: {
     overall_quality: number;
     maintainability: number;
@@ -243,6 +270,9 @@ export interface AnalysisResult {
     [key: string]: unknown;
   };
   improvement_suggestions?: ImprovementSuggestion[];
+  code_quality_analysis?: Array<{ type: string; severity: string; description: string; suggestion?: string }>;
+  security_analysis?: Array<{ type: string; severity: string; description: string; recommendation?: string }>;
+  performance_analysis?: Array<{ type: string; impact: string; description: string; solution?: string }>;
 }
 
 export interface SavedReport {

@@ -13,6 +13,7 @@ from starlette.concurrency import run_in_threadpool
 
 from services.analysis_service import AnalysisService
 from services.file_scanner import FileScanner
+from services.file_preview import read_file_preview
 from services.github_metadata import GitHubMetadataService
 from services.prompt_builder import PromptBuilder
 from services.repo_cloner import RepoCloner
@@ -30,6 +31,11 @@ class AnalyzeRequest(BaseModel):
     github_url: str = Field(min_length=1, max_length=500)
     use_mock: bool = False  # Kept for backwards compatibility; scores are never mocked.
     include_llm: bool = True
+
+
+class FilePreviewRequest(BaseModel):
+    github_url: str = Field(min_length=1, max_length=500)
+    path: str = Field(min_length=1, max_length=512)
 
 
 class AnalyzeResponse(BaseModel):
@@ -55,6 +61,7 @@ class AnalyzeResponse(BaseModel):
     architecture_analysis: dict[str, Any]
     important_files: list[dict[str, Any]]
     onboarding_guide: list[dict[str, Any]]
+    project_guide: dict[str, Any]
     code_quality_analysis: list[dict[str, Any]]
     security_analysis: list[dict[str, Any]]
     performance_analysis: list[dict[str, Any]]
@@ -133,11 +140,11 @@ async def analyze_repository(request: AnalyzeRequest):
             "final_assessment": f"Static analysis rates this repository {score_band.lower()} for quality using {scan['file_count']} scanned files and {scan['total_lines']} source/test lines. Scores are evidence-based heuristics and do not claim runtime or human-review validation.",
         }
         return AnalyzeResponse(
-            success=True, schema_version="1.2", repository={"owner": owner, "name": name, "full_name": clone["repo_name"], "url": f"https://github.com/{owner}/{name}", "clone_depth": clone["clone_depth"]},
+            success=True, schema_version="1.3", repository={"owner": owner, "name": name, "full_name": clone["repo_name"], "url": f"https://github.com/{owner}/{name}", "clone_depth": clone["clone_depth"]},
             repo_info={"name": clone["repo_name"], "technologies": technologies, "file_count": scan["file_count"], "total_lines": scan["total_lines"], "is_mock": False, "ml_model_used": static["score_methodology"]["version"]},
             metrics=static["metrics"], scores=scores, score_methodology=static["score_methodology"],
-            file_breakdown={"total": scan["file_count"], "by_category": dict(categories), "by_language": scan["language_breakdown"], "by_extension": scan["extension_breakdown"], "sample_limit": 1000},
-            files=files[:1000], folder_breakdown=scan["folder_breakdown"], insights=insights,
+            file_breakdown={"total": scan["file_count"], "by_category": dict(categories), "by_language": scan["language_breakdown"], "by_extension": scan["extension_breakdown"], "sample_limit": FileScanner.MAX_FILES},
+            files=files[:FileScanner.MAX_FILES], folder_breakdown=scan["folder_breakdown"], insights=insights,
             quick_fix_checklist=quick_fix_checklist, ml_scores=ml_scores,
             code_overview=code_overview, github_metadata=github_metadata,
             repository_overview={"name": project_overview["title"], "purpose": project_overview["description"], "purpose_status": project_overview["status"], "purpose_note": project_overview["note"], "problem_solved": None, "application_type": _application_type(technologies) if scan.get("frameworks") else None, "application_type_status": "inferred_from_declared_frameworks" if scan.get("frameworks") else "unavailable", "application_type_note": "Project type is a lightweight inference from declared frameworks, not a verified runtime behavior." if scan.get("frameworks") else "No declared framework was available to infer a project type.", "target_users": None, "domain": None, "summary_source": project_overview["source"], "summary_confidence": project_overview["confidence"], "evidence": project_overview["evidence"]},
@@ -146,9 +153,25 @@ async def analyze_repository(request: AnalyzeRequest):
             architecture_overview={"pattern": architecture["architecture_type"], "description": architecture["architecture_explanation"], "folder_structure": ", ".join(source_dirs) or "No nested source directories detected", "data_flow": "Static code review required for precise runtime data flow.", "scalability": architecture["scalability"]["scalability_notes"]},
             architecture_analysis=architecture, important_files=important,
             onboarding_guide=_onboarding(scan, technologies), code_quality_analysis=_quality_issues(scan, static),
+            project_guide=scan.get("project_guide", {}),
             security_analysis=_security_issues(scan, static), performance_analysis=_performance_issues(static),
             improvement_suggestions=insights["recommendations"], final_summary=final_summary,
         )
+    finally:
+        repo_cloner.cleanup_repo(local_path)
+
+
+@router.post("/file-preview")
+async def preview_repository_file(request: FilePreviewRequest):
+    """Fetch a single public text file only after the user selects it in the UI."""
+    if not repo_cloner.validate_github_url(request.github_url):
+        raise HTTPException(status_code=422, detail="Provide a public HTTPS GitHub repository URL.")
+    clone = await run_in_threadpool(repo_cloner.clone_repository, request.github_url)
+    if not clone.get("success"):
+        raise HTTPException(status_code=400, detail=clone.get("error", "Repository clone failed."))
+    local_path = clone["local_path"]
+    try:
+        return await run_in_threadpool(read_file_preview, local_path, request.path)
     finally:
         repo_cloner.cleanup_repo(local_path)
 

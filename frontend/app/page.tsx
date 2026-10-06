@@ -87,16 +87,18 @@ export default function Home() {
             <span className="mt-1 block">Configure <code className="rounded bg-black/10 px-1 py-0.5">REPOLENS_API_URL</code> on the Next.js server, or start FastAPI locally on port 8000.</span>
           </div>}
           {error && <div role="alert" className="mt-4 rounded-xl border border-[#e8c9bd] bg-[#f8ece7] p-4 text-sm text-[#833a32]"><div className="font-semibold">Analysis did not complete</div><p className="mt-1 leading-6">{error}</p></div>}
-          {isAnalyzing && <div className="mt-5 rounded-2xl border border-[#d9ddd2] bg-[#fffefa] p-5"><LoadingSpinner /></div>}
         </div>
 
-        <aside className="surface-paper-gradient h-fit rounded-[22px] border border-[#d9ddd2] bg-[#faf9f4] p-5 sm:p-6 lg:mt-6">
-          <div className="flex items-center gap-3"><RepoLensMark className="h-8 w-8" /><div><h2 className="text-sm font-semibold text-[#203229]">What the report reads</h2><p className="mt-1 text-xs text-[#59665d]">Observed evidence, not generated sample scores.</p></div></div>
-          <div className="mt-5 divide-y divide-[#e3e1d7]">
-            {scanAreas.map((area) => <div key={area.number} className="flex gap-3 py-4 first:pt-0 last:pb-0"><span className="pt-0.5 font-mono text-[10px] font-semibold text-[#315d42]">{area.number}</span><div><h3 className="text-sm font-semibold text-[#304239]">{area.title}</h3><p className="mt-1 text-xs leading-5 text-[#59665d]">{area.detail}</p></div></div>)}
-          </div>
-          <a href="#how-it-works" className="mt-5 inline-flex items-center gap-2 text-xs font-semibold text-[#315d42] underline decoration-[#a9bea4] underline-offset-4">How RepoLens produces a report <span aria-hidden="true">↓</span></a>
-        </aside>
+        <div className="space-y-4 lg:mt-6">
+          <aside className="surface-paper-gradient h-fit rounded-[22px] border border-[#d9ddd2] bg-[#faf9f4] p-5 sm:p-6">
+            <div className="flex items-center gap-3"><RepoLensMark className="h-8 w-8" /><div><h2 className="text-sm font-semibold text-[#203229]">What the report reads</h2><p className="mt-1 text-xs text-[#59665d]">Observed evidence, not generated sample scores.</p></div></div>
+            <div className="mt-5 divide-y divide-[#e3e1d7]">
+              {scanAreas.map((area) => <div key={area.number} className="flex gap-3 py-4 first:pt-0 last:pb-0"><span className="pt-0.5 font-mono text-[10px] font-semibold text-[#315d42]">{area.number}</span><div><h3 className="text-sm font-semibold text-[#304239]">{area.title}</h3><p className="mt-1 text-xs leading-5 text-[#59665d]">{area.detail}</p></div></div>)}
+            </div>
+            <a href="#how-it-works" className="mt-5 inline-flex items-center gap-2 text-xs font-semibold text-[#315d42] underline decoration-[#a9bea4] underline-offset-4">How RepoLens produces a report <span aria-hidden="true">↓</span></a>
+          </aside>
+          {isAnalyzing && <div className="surface-paper-gradient rounded-2xl border border-[#d9ddd2] bg-[#fffefa] p-5 shadow-sm"><LoadingSpinner /></div>}
+        </div>
       </section>
 
       <section id="how-it-works" className="print-hide mx-auto max-w-[1440px] scroll-mt-8 px-5 pb-12 sm:px-8 lg:px-12">

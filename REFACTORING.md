@@ -139,3 +139,10 @@ The traceback showed `StaticAnalyzer._signals()` indexing `Path(".").parts[-1]`.
 - `backend/routes/analyze.py` exposes `POST /api/history` separately from analysis, while `frontend/app/api/history/route.ts` and `frontend/services/api.ts` keep the fetch same-origin. The UI only requests history when the existing **Findings** section is opened; the core depth-1 scan and score calculation are unchanged.
 - `frontend/components/HistoryTrends.tsx` renders responsive SVG charts for weekly commit activity grouped by month and per-commit net branch-decision-token changes from sampled source patches, with recent commit links, coverage, loading/error states, and matching light/dark chart colors.
 - The complexity graph is deliberately labeled as a source-patch proxy, not full historical cyclomatic complexity; missing patches and syntax heuristics are explained and do not affect scores or saved snapshots. The API contract documents that distinction.
+
+## Follow-up: Findings status gradients and chart legends
+
+- `frontend/app/globals.css` adds contrast-safe semantic gradients for present, medium, low, and missing states, with dedicated dark-mode equivalents and matching score-fill colors.
+- `frontend/components/ReportSections.tsx` applies those states to health-score bands, readiness checklist items, findings severities, large-file review signals, and recommendation priorities; the text labels remain visible so color is not the only cue.
+- `frontend/components/HistoryTrends.tsx` adds explicit legends to both SVG charts: commit-count bars identify their GitHub/sample source; complexity points distinguish increases and decreases, and identify the sample-order connector and zero-change baseline.
+- Verified on a live `FireClow/SuruAhai` report in light and dark mode. Both graphs and custom legends rendered; severity/status categories were visible in DOM and screenshots. The complexity display remained correctly titled “Complexity change” for a one-patch sample. Optimized Next.js production build and `git diff --check` passed.

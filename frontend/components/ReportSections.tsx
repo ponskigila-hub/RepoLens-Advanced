@@ -7,7 +7,17 @@ import TechLogo from '@/components/TechLogo';
 import type { AnalysisResult, DynamicScore, ProjectGuide, QuickFixItem, RepositoryFolder } from '@/types/analysis';
 
 const number = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? new Intl.NumberFormat().format(value) : 'Not measured';
+type StatusTone = 'present' | 'medium' | 'low' | 'missing';
+const scoreTone = (value?: number): StatusTone => value === undefined ? 'missing' : value >= 80 ? 'present' : value >= 60 ? 'medium' : 'low';
 const scoreBand = (value?: number) => value === undefined ? 'Not available' : value >= 80 ? 'Strong signal' : value >= 60 ? 'Developing' : 'Needs attention';
+
+function severityTone(value?: string): StatusTone {
+  const label = (value || '').toLowerCase();
+  if (/\b(critical|high|blocker|urgent)\b/.test(label)) return 'low';
+  if (/\b(medium|moderate|warning)\b/.test(label)) return 'medium';
+  if (/\b(low|minor|info|informational|none)\b/.test(label)) return 'present';
+  return 'missing';
+}
 
 const LANGUAGE_COLORS: Record<string, string> = {
   JavaScript: '#f1e05a', TypeScript: '#3178c6', Python: '#3572a5', CSS: '#563d7c', HTML: '#e34c26',
@@ -48,7 +58,7 @@ function scoreFor(result: AnalysisResult, key: string): number | undefined {
 }
 
 function tone(value?: number) {
-  return value === undefined ? 'text-[#59665d]' : value >= 80 ? 'text-[#315d42]' : value >= 60 ? 'text-[#735017]' : 'text-[#833a32]';
+  return `signal-text--${scoreTone(value)}`;
 }
 
 function compactCodeSummary(value?: string) {
@@ -93,8 +103,8 @@ function ScoreTile({ label, value, note }: { label: string; value?: number; note
         <div><h4 className="text-xs font-semibold text-[#304239]">{label}</h4><p className="mt-1 text-[10px] leading-4 text-[#59665d]">{note}</p></div>
         <span className={`font-mono text-lg font-semibold ${tone(safe)}`}>{safe === undefined ? '—' : safe.toFixed(1)}</span>
       </div>
-      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[#eeece3]"><div className="h-full rounded-full bg-[#47734f]" style={{ width: `${safe ?? 0}%` }} /></div>
-      <p className="mt-1.5 text-[9px] uppercase tracking-[.08em] text-[#59665d]">{scoreBand(safe)}</p>
+      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[#eeece3]"><div className={`h-full rounded-full score-fill--${scoreTone(safe)}`} style={{ width: `${safe ?? 0}%` }} /></div>
+      <p className={`mt-1.5 w-fit status-pill status-pill--${scoreTone(safe)}`}>{scoreBand(safe)}</p>
     </div>
   );
 }
@@ -116,7 +126,7 @@ function QualityCircle({ value, methodology }: { value?: number; methodology: st
           <span className="mt-0.5 text-[9px] font-bold uppercase tracking-[.1em] text-[#59665d]">Quality / 100</span>
         </div>
       </div>
-      <p className="mt-1 text-xs font-semibold text-[#304239]">{scoreBand(safe)}</p>
+      <p className={`mt-1 status-pill status-pill--${scoreTone(safe)}`}>{scoreBand(safe)}</p>
       <p className="mt-1 text-[10px] text-[#59665d]">{methodology}</p>
     </div>
   );
@@ -142,7 +152,7 @@ export function AtAGlance({ result }: { result: AnalysisResult }) {
       <section className="rounded-2xl border border-[#cbd9cb] border-l-4 border-l-[#315d42] bg-[#fffefa] p-5 shadow-sm sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div><p className="text-[10px] font-bold uppercase tracking-[.12em] text-[#59665d]">What this project is for</p><h3 className="mt-1 text-xl font-semibold tracking-tight text-[#203229]">{project?.name || result.repository?.full_name || 'Repository overview'}</h3></div>
-          <span className={`rounded-full px-3 py-1.5 text-[10px] font-semibold ${project?.purpose_status === 'documented' ? 'bg-[#edf3e9] text-[#315d42]' : 'bg-[#fbf5e8] text-[#604515]'}`}>{project?.purpose_status === 'documented' ? `Documented · ${project.summary_source || 'README'}` : 'Purpose not documented'}</span>
+          <span className={`status-pill status-pill--${project?.purpose_status === 'documented' ? 'present' : 'missing'}`}>{project?.purpose_status === 'documented' ? `Documented · ${project.summary_source || 'README'}` : 'Purpose not documented'}</span>
         </div>
         {project?.purpose ? <p className="mt-3 max-w-4xl text-sm leading-7 text-[#304239]">{project.purpose}</p> : <p className="mt-3 max-w-4xl text-sm leading-7 text-[#45594c]">No clear purpose statement was found in the README or supported manifests. RepoLens does not guess a product description from filenames alone.</p>}
         {project?.purpose_note && <p className="mt-2 text-[10px] leading-5 text-[#59665d]">{project.purpose_note}{project.evidence?.length ? ` Evidence: ${project.evidence.join(', ')}.` : ''}</p>}
@@ -318,10 +328,10 @@ export function QuickFixesSection({ result }: { result: AnalysisResult }) {
   const checklist = result.quick_fix_checklist;
   return (
     <Panel title="Production readiness quick fixes" note={checklist?.note || 'Presence checks only; these are not a quality or safety certification.'}>
-      <div className="mb-3 flex items-baseline justify-between gap-3"><p className="text-xs text-[#45594c]">Missing root files and delivery signals</p><span className="rounded-full bg-[#edf3e9] px-2.5 py-1 text-xs font-semibold text-[#315d42]">{number(checklist?.completed ?? 0)} / {number(checklist?.total ?? 0)} present</span></div>
+      <div className="mb-3 flex items-baseline justify-between gap-3"><p className="text-xs text-[#45594c]">Missing root files and delivery signals</p><span className="status-pill status-pill--present">{number(checklist?.completed ?? 0)} / {number(checklist?.total ?? 0)} present</span></div>
       <div className="grid gap-2 sm:grid-cols-2">
-        {(checklist?.items ?? []).map((item: QuickFixItem) => <article key={item.id} className={`rounded-xl border p-3 ${item.complete ? 'border-[#ceddce] bg-[#f6f8f2]' : 'border-[#ead8c9] bg-[#fffaf6]'}`}>
-          <div className="flex items-start gap-2.5"><input type="checkbox" checked={item.complete} readOnly aria-label={`${item.file_pattern}: ${item.status}`} className="mt-1 h-4 w-4 accent-[#47734f]" /><div className="min-w-0"><div className="flex flex-wrap items-center justify-between gap-2"><h4 className="font-mono text-xs font-semibold text-[#203229]">{item.file_pattern}</h4><span className={`rounded-full px-2 py-1 text-[9px] font-semibold uppercase ${item.complete ? 'bg-[#edf3e9] text-[#315d42]' : 'bg-[#f7eee7] text-[#854830]'}`}>{item.status}</span></div><p className="mt-2 text-xs leading-5 text-[#304239]">{item.instruction}</p><p className="mt-1 text-[10px] leading-4 text-[#59665d]">{item.evidence}</p></div></div>
+        {(checklist?.items ?? []).map((item: QuickFixItem) => <article key={item.id} className={`status-card status-card--${item.complete ? 'present' : 'missing'} rounded-xl border p-3`}>
+          <div className="flex items-start gap-2.5"><input type="checkbox" checked={item.complete} readOnly aria-label={`${item.file_pattern}: ${item.status}`} className="mt-1 h-4 w-4 accent-[#47734f]" /><div className="min-w-0"><div className="flex flex-wrap items-center justify-between gap-2"><h4 className="font-mono text-xs font-semibold text-[#203229]">{item.file_pattern}</h4><span className={`status-pill status-pill--${item.complete ? 'present' : 'missing'}`}>{item.status}</span></div><p className="mt-2 text-xs leading-5 text-[#304239]">{item.instruction}</p><p className="mt-1 text-[10px] leading-4 text-[#59665d]">{item.evidence}</p></div></div>
         </article>)}
         {!checklist?.items?.length && <p className="text-sm text-[#59665d]">No checklist data was returned.</p>}
       </div>
@@ -364,7 +374,7 @@ export function HotspotsAndFixes({ result }: { result: AnalysisResult }) {
 
       <div className="grid gap-4 xl:grid-cols-2">
         <Panel title="Large source files" note="Files over 500 lines are listed as review candidates, not proven defects.">
-          {largeFiles.length ? <div className="space-y-2">{largeFiles.slice(0, 10).map((item) => <div key={item.path} className="flex items-center justify-between gap-3 rounded-lg border border-[#e3e1d7] bg-[#faf9f4] px-3 py-2.5"><code className="min-w-0 truncate text-xs text-[#304239]" title={item.path}>{item.path}</code><span className="shrink-0 rounded-md bg-[#fbf5e8] px-2 py-1 font-mono text-[10px] text-[#604515]">{number(item.lines)} lines</span></div>)}</div> : <p className="text-sm text-[#59665d]">No scanned source file exceeded 500 lines.</p>}
+          {largeFiles.length ? <div className="space-y-2">{largeFiles.slice(0, 10).map((item) => <div key={item.path} className="flex items-center justify-between gap-3 rounded-lg border border-[#e3e1d7] bg-[#faf9f4] px-3 py-2.5"><code className="min-w-0 truncate text-xs text-[#304239]" title={item.path}>{item.path}</code><span className="status-pill status-pill--medium shrink-0 font-mono">{number(item.lines)} lines</span></div>)}</div> : <p className="text-sm text-[#59665d]">No scanned source file exceeded 500 lines.</p>}
         </Panel>
         <Panel title="Highest measured score factors" note="Weights and evidence explain how the dynamic static scores were formed.">
           {qualityComponents.length ? <div className="space-y-2">{qualityComponents.slice(0, 5).map((item) => <div key={item.name} className="rounded-lg border border-[#e3e1d7] bg-[#faf9f4] p-3"><div className="flex items-center justify-between gap-3"><p className="text-xs font-semibold text-[#304239]">{item.name}</p><span className={`font-mono text-xs ${tone(item.score)}`}>{item.score.toFixed(1)} · {(item.weight * 100).toFixed(0)}%</span></div><p className="mt-1 text-[10px] leading-5 text-[#59665d]">{item.evidence}</p></div>)}</div> : <p className="text-sm text-[#59665d]">No score components were returned.</p>}
@@ -373,10 +383,10 @@ export function HotspotsAndFixes({ result }: { result: AnalysisResult }) {
       </div>
 
       {!!issues.length && <Panel title="Findings to review" note="Pattern-based findings are signals for manual review, not confirmed defects.">
-        <div className="space-y-2">{issues.slice(0, 12).map((item, index) => <article key={`${item.title}-${index}`} className="rounded-xl border border-[#ead8c9] bg-[#fffaf6] p-3"><div className="flex flex-wrap items-center justify-between gap-2"><h4 className="text-xs font-semibold text-[#304239]">{item.title}</h4><span className="rounded bg-[#f7eee7] px-2 py-1 text-[9px] font-semibold uppercase text-[#854830]">{item.severity}</span></div><p className="mt-2 text-xs leading-5 text-[#45594c]">{item.description}</p>{item.action && <p className="mt-1 text-xs leading-5 text-[#304239]">Next step: {item.action}</p>}</article>)}</div>
+        <div className="space-y-2">{issues.slice(0, 12).map((item, index) => <article key={`${item.title}-${index}`} className={`status-card status-card--${severityTone(item.severity)} rounded-xl border p-3`}><div className="flex flex-wrap items-center justify-between gap-2"><h4 className="text-xs font-semibold text-[#304239]">{item.title}</h4><span className={`status-pill status-pill--${severityTone(item.severity)}`}>{item.severity}</span></div><p className="mt-2 text-xs leading-5 text-[#45594c]">{item.description}</p>{item.action && <p className="mt-1 text-xs leading-5 text-[#304239]">Next step: {item.action}</p>}</article>)}</div>
       </Panel>}
       {!!recommendations.length && <Panel title="Recommended next steps">
-        <div className="grid gap-2 sm:grid-cols-2">{recommendations.slice(0, 8).map((item, index) => <article key={`${item.category}-${index}`} className="rounded-xl border border-[#e3e1d7] bg-[#faf9f4] p-3"><div className="flex items-center justify-between gap-2"><p className="text-xs font-semibold text-[#315d42]">{item.category}</p><span className="text-[9px] font-semibold uppercase text-[#59665d]">{item.priority}</span></div><p className="mt-2 text-xs leading-5 text-[#304239]">{item.suggestion}</p><p className="mt-1 text-[10px] leading-4 text-[#59665d]">{item.impact}</p></article>)}</div>
+        <div className="grid gap-2 sm:grid-cols-2">{recommendations.slice(0, 8).map((item, index) => <article key={`${item.category}-${index}`} className="rounded-xl border border-[#e3e1d7] bg-[#faf9f4] p-3"><div className="flex items-center justify-between gap-2"><p className="text-xs font-semibold text-[#315d42]">{item.category}</p><span className={`status-pill status-pill--${severityTone(item.priority)}`}>{item.priority}</span></div><p className="mt-2 text-xs leading-5 text-[#304239]">{item.suggestion}</p><p className="mt-1 text-[10px] leading-4 text-[#59665d]">{item.impact}</p></article>)}</div>
       </Panel>}
       {!!result.insights?.scan_warnings?.length && <Panel title="Scan limitations"><ul className="space-y-1 text-xs leading-5 text-[#604515]">{result.insights.scan_warnings.map((warning) => <li key={warning}>• {warning}</li>)}</ul></Panel>}
     </div>

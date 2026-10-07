@@ -53,6 +53,13 @@ function monthlyBuckets(history: RepositoryHistory) {
   return { months, complete: false, label: 'Sample only: commits in the recent API page, not full monthly totals' };
 }
 
+type LegendKind = 'bar' | 'positive' | 'negative' | 'line' | 'baseline';
+function ChartLegend({ items }: { items: Array<{ kind: LegendKind; label: string }> }) {
+  return <div role="group" aria-label="Chart legend" className="chart-legend">
+    {items.map((item) => <span key={`${item.kind}-${item.label}`} className="chart-legend-item"><span className={`chart-legend-key chart-legend-key--${item.kind}`} aria-hidden="true"/><span>{item.label}</span></span>)}
+  </div>;
+}
+
 function ActivityChart({ history }: { history: RepositoryHistory }) {
   const activity = useMemo(() => monthlyBuckets(history), [history]);
   const hasData = activity.months.some((item) => item.commits > 0);
@@ -81,6 +88,7 @@ function ActivityChart({ history }: { history: RepositoryHistory }) {
           </g>;
         })}
       </svg>
+      <ChartLegend items={[{ kind: 'bar', label: activity.complete ? 'GitHub weekly commits grouped by month' : 'Recent commits returned by the API' }]} />
       {!activity.complete && <p className="mt-1 text-[10px] leading-4 text-[#735017]">GitHub weekly totals are not ready or unavailable; bars count only the recent commits returned by the API.</p>}
     </> : <p className="rounded-xl border border-dashed border-[#d9ddd2] bg-[#faf9f4] px-3 py-5 text-center text-xs leading-5 text-[#59665d]">No commit activity was returned for this repository or recent sample.</p>}
   </Panel>;
@@ -118,13 +126,14 @@ function ComplexityChart({ history }: { history: RepositoryHistory }) {
           const yy = y(value);
           return <g key={ratio}><line x1={plot.left} y1={yy} x2={plot.right} y2={yy} stroke="var(--chart-grid)" strokeDasharray="3 4"/><text x={plot.left - 8} y={yy + 4} textAnchor="end" fill="var(--chart-text)" fontSize="10">{Math.round(value)}</text></g>;
         })}
-        <line x1={plot.left} y1={zeroY} x2={plot.right} y2={zeroY} stroke="var(--chart-terra)" strokeDasharray="4 4"/>
+        <line x1={plot.left} y1={zeroY} x2={plot.right} y2={zeroY} stroke="var(--chart-zero)" strokeDasharray="4 4"/>
         {points.length > 1 && <path d={path} fill="none" stroke="var(--chart-line)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>}
         {points.map((point, index) => <g key={`${point.sha}-${index}`}>
-          <circle cx={x(index)} cy={y(point.net_decision_points)} r="5" fill="var(--chart-terra)" stroke="var(--panel-bg)" strokeWidth="2"><title>{`${point.sha} · ${formatDate(point.date)} · net branch-token change ${point.net_decision_points >= 0 ? '+' : ''}${point.net_decision_points} · patch coverage ${point.patch_coverage_percent}% · ${point.message}`}</title></circle>
+          <circle cx={x(index)} cy={y(point.net_decision_points)} r="5" fill={point.net_decision_points > 0 ? 'var(--chart-positive)' : point.net_decision_points < 0 ? 'var(--chart-negative)' : 'var(--chart-neutral)'} stroke="var(--panel-bg)" strokeWidth="2"><title>{`${point.sha} · ${formatDate(point.date)} · net branch-token change ${point.net_decision_points >= 0 ? '+' : ''}${point.net_decision_points} · patch coverage ${point.patch_coverage_percent}% · ${point.message}`}</title></circle>
           {(index === 0 || index === points.length - 1 || index === Math.floor(points.length / 2)) && <text x={x(index)} y="196" textAnchor="middle" fill="var(--chart-text)" fontSize="9">{point.sha}</text>}
         </g>)}
       </svg>
+      <ChartLegend items={[{ kind: 'positive', label: 'Increase (+)' }, { kind: 'negative', label: 'Decrease (−)' }, ...(points.length > 1 ? [{ kind: 'line' as const, label: 'Sample order (visual connector)' }] : []), { kind: 'baseline', label: 'Zero-change baseline' }]} />
       <p className="mt-1 text-[10px] leading-4 text-[#59665d]">{points.length === 1 ? 'Only one supported source patch was available in the sampled window; this is one measured commit change, not a trend line.' : 'Each point is one sampled commit. Positive values mean more branch-like tokens in added lines than removed lines.'} Tooltip includes patch coverage.</p>
     </> : <p className="rounded-xl border border-dashed border-[#d9ddd2] bg-[#faf9f4] px-3 py-5 text-center text-xs leading-5 text-[#59665d]">No supported source patches were available to estimate a complexity-change trend.</p>}
   </Panel>;

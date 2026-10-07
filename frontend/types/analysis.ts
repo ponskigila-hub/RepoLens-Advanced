@@ -285,6 +285,43 @@ export interface SavedReport {
   visibility: 'public_unlisted';
 }
 
+export interface RepositoryHistory {
+  status: 'available' | 'partial' | 'unavailable';
+  source: string;
+  activity_status: 'available' | 'pending' | 'unavailable';
+  weekly_activity: Array<{ week_start: string; commits: number }>;
+  activity_note: string;
+  recent_commits: Array<{
+    sha: string;
+    short_sha: string;
+    date: string | null;
+    message: string;
+    url: string;
+    additions: number | null;
+    deletions: number | null;
+    changed_files: number | null;
+    complexity_change: {
+      added_decision_points: number;
+      removed_decision_points: number;
+      net_decision_points: number;
+      source_files_changed: number;
+      source_files_with_patch: number;
+      patch_coverage_percent: number;
+    } | null;
+  }>;
+  complexity_trend: Array<{
+    sha: string;
+    date: string;
+    message: string;
+    net_decision_points: number;
+    patch_coverage_percent: number;
+  }>;
+  complexity_note: string;
+  commit_limit: number;
+  complexity_sample_limit: number;
+  note: string;
+}
+
 export interface PublicReport extends SavedReport {
   result: AnalysisResult;
 }

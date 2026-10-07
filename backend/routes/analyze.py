@@ -15,6 +15,7 @@ from services.analysis_service import AnalysisService
 from services.file_scanner import FileScanner
 from services.file_preview import read_file_preview
 from services.github_metadata import GitHubMetadataService
+from services.github_history import GitHubHistoryService
 from services.prompt_builder import PromptBuilder
 from services.repo_cloner import RepoCloner
 from services.static_analyzer import StaticAnalyzer
@@ -25,6 +26,7 @@ prompt_builder = PromptBuilder()
 analysis_service = AnalysisService()
 static_analyzer = StaticAnalyzer()
 github_metadata_service = GitHubMetadataService()
+github_history_service = GitHubHistoryService()
 
 
 class AnalyzeRequest(BaseModel):
@@ -36,6 +38,10 @@ class AnalyzeRequest(BaseModel):
 class FilePreviewRequest(BaseModel):
     github_url: str = Field(min_length=1, max_length=500)
     path: str = Field(min_length=1, max_length=512)
+
+
+class HistoryRequest(BaseModel):
+    github_url: str = Field(min_length=1, max_length=500)
 
 
 class AnalyzeResponse(BaseModel):
@@ -159,6 +165,30 @@ async def analyze_repository(request: AnalyzeRequest):
         )
     finally:
         repo_cloner.cleanup_repo(local_path)
+
+
+@router.post("/history")
+async def repository_history(request: HistoryRequest):
+    """Fetch optional GitHub activity and recent source-patch trend data."""
+    parsed = repo_cloner.parse_github_url(request.github_url)
+    if not parsed:
+        raise HTTPException(status_code=422, detail="Provide a public HTTPS GitHub repository URL.")
+    try:
+        return await run_in_threadpool(github_history_service.fetch, parsed[0], parsed[1])
+    except Exception:
+        return {
+            "status": "unavailable",
+            "source": "GitHub REST API",
+            "activity_status": "unavailable",
+            "weekly_activity": [],
+            "activity_note": "Weekly activity statistics were not available from GitHub for this request.",
+            "recent_commits": [],
+            "complexity_trend": [],
+            "complexity_note": "A branch-token change proxy could not be calculated for this request.",
+            "commit_limit": GitHubHistoryService.COMMIT_LIMIT,
+            "complexity_sample_limit": GitHubHistoryService.PATCH_SAMPLE_LIMIT,
+            "note": "GitHub history is temporarily unavailable; repository analysis remains available.",
+        }
 
 
 @router.post("/file-preview")

@@ -1,4 +1,4 @@
-import type { AnalysisRequest, AnalysisResult, FilePreview, PublicReport, SavedReport } from '@/types/analysis';
+import type { AnalysisRequest, AnalysisResult, FilePreview, PublicReport, RepositoryHistory, SavedReport } from '@/types/analysis';
 
 export class ApiService {
   private readonly baseUrl: string;
@@ -109,6 +109,30 @@ export class ApiService {
       throw new Error(detail);
     }
     return data as FilePreview;
+  }
+
+  async getRepositoryHistory(githubUrl: string, signal?: AbortSignal): Promise<RepositoryHistory> {
+    let response: Response;
+    try {
+      response = await fetch(this.endpoint('/api/history'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ github_url: githubUrl }),
+        signal,
+        cache: 'no-store',
+      });
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') throw error;
+      throw new Error('Could not reach the GitHub history service.');
+    }
+    const data: unknown = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const detail = typeof data === 'object' && data !== null && 'detail' in data && typeof data.detail === 'string'
+        ? data.detail
+        : `Loading repository history failed (${response.status}).`;
+      throw new Error(detail);
+    }
+    return data as RepositoryHistory;
   }
 }
 

@@ -12,6 +12,11 @@
   --forest: #47734f;
   --forest-deep: #315d42;
   --terracotta: #bd7452;
+  --chart-grid: #e3e1d7;
+  --chart-line: #315d42;
+  --chart-terra: #bd7452;
+  --chart-fill: #90ad8c;
+  --chart-text: #66746b;
 }
 
 * { box-sizing: border-box; }
@@ -94,6 +99,11 @@ html[data-theme="dark"] {
   --forest: #a7d4ad;
   --forest-deep: #a7d4ad;
   --terracotta: #efab8d;
+  --chart-grid: #394b3f;
+  --chart-line: #a7d4ad;
+  --chart-terra: #efab8d;
+  --chart-fill: #688b6d;
+  --chart-text: #b8c6bb;
   background: var(--page-bg);
 }
 

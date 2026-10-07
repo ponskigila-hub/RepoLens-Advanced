@@ -53,6 +53,16 @@ This check is an exact-name/text heuristic, not semantic verification. A README 
 
 Metadata lookup is best-effort: a rate limit, network failure, or API error does not affect cloned files, scorecards, or code overview. Set optional backend secret `GITHUB_TOKEN` to raise GitHub API limits. Never expose the token to frontend JavaScript or commit it.
 
+## Repository history and trend charts
+
+`POST /api/history` accepts `{"github_url":"https://github.com/owner/repository"}` and returns best-effort GitHub history separately from `POST /api/analyze`. It does not clone or execute the repository and is requested only when the user opens **Findings**. The response includes weekly commit activity for roughly the last year when GitHub has it cached, plus up to eight recent commits with messages, dates, patch sizes, and source-change estimates. Results are cached in memory for 15 minutes.
+
+`activity_status` is `available`, `pending`, or `unavailable`. GitHub's statistics API can respond with `202 Accepted` while preparing its weekly data; RepoLens reports that state rather than showing fake zeros. The user can retry later; the recent commit sample can still be available meanwhile. `status` is `available`, `partial`, or `unavailable`; a history failure does not affect the main analysis report.
+
+`complexity_trend` is an explicitly limited **branch/decision-token change proxy** computed from up to eight patches sampled across the most recent 30 commits. It counts additions and removals of common branch-like syntax in supported source-file diffs, then plots the per-commit net changes in chronological order. Patch omissions, unsupported syntax, language heuristics, refactors, and string/comment contexts can affect it; this is **not** a full-repository historical cyclomatic-complexity recomputation. Each sampled commit includes patch coverage so incomplete data remains visible. It does not affect scores and is not stored in saved report snapshots.
+
+The history lookup uses bounded GitHub REST responses and parallelizes only the small recent-commit sample. Public unauthenticated limits may apply; optional server-side `GITHUB_TOKEN` raises the rate limit. Never expose that token to frontend JavaScript or commit it.
+
 Frameworks are recognized from direct declarations in supported `package.json`, requirements files, `pyproject.toml`, or `Cargo.toml`; declarations do not prove runtime use. Unsupported/indirect dependencies may not be recognized.
 
 The quick-fix checklist reports presence only, not quality or certification. Checklist artifacts contribute to the dynamic Production Readiness score; evidence is returned under `scores.production_readiness.components`.
@@ -111,6 +121,7 @@ The API uses a depth-1 clone, caps inventory at 12,000 files and text reads at 2
 |---|---|
 | `GET /health` | FastAPI health/methodology check. |
 | `POST /api/analyze` | Static analysis, optional LLM narrative, code map, and best-effort GitHub metadata. |
+| `POST /api/history` | On-demand weekly commit activity and a caveated recent-patch complexity-change trend. |
 | `POST /api/file-preview` | Fresh bounded clone and safe on-demand UTF-8 text preview for one selected file. |
 | `POST /api/reports` | Save completed report. |
 | `GET /api/reports/{id}` | Read saved report. |

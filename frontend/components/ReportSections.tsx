@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import RepositoryFiles from '@/components/RepositoryFiles';
+import HistoryTrends from '@/components/HistoryTrends';
 import TechLogo from '@/components/TechLogo';
 import type { AnalysisResult, DynamicScore, ProjectGuide, QuickFixItem, RepositoryFolder } from '@/types/analysis';
 
@@ -344,6 +345,7 @@ export function HotspotsAndFixes({ result }: { result: AnalysisResult }) {
   const recommendations = result.insights?.recommendations ?? result.improvement_suggestions ?? [];
   return (
     <div className="space-y-4">
+      <HistoryTrends repositoryUrl={result.repository?.url} />
       <Panel title="Measured engineering signals" note={ast?.complexity_method || 'Metrics summarize the bounded static scan; runtime performance is not measured.'}>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
           <Stat label="Files" value={number(metrics?.files?.total)} />
@@ -388,7 +390,7 @@ function HowItWorks({ result }: { result: AnalysisResult }) {
     ['Read code structure', 'Python source is parsed with AST for declarations and complexity signals. JavaScript, TypeScript, Go, and Rust symbols/branches use syntax patterns. Source execution, dependency installation, and target-project tests are never performed.'],
     ['Keep documentation and code distinct', 'README or manifest purpose text is shown with provenance. A code-first synopsis uses paths, symbol names, entry-point candidates, and direct manifest declarations; it does not invent business purpose or prove runtime call flow.'],
     ['Calculate and explain scores', `The ${result.score_methodology?.version || 'static'} scorecards are weighted transformations of observed metrics and artifacts. Missing evidence is shown as unavailable or zero-contribution; an optional LLM narrative is separate and cannot change the measured scores.`],
-    ['Render, share, and preview selectively', 'The API returns a structured JSON report. Saving explicitly stores a public-unlisted SQLite snapshot without source contents; PDF uses the browser print dialog. Selecting a file triggers a separate bounded text fetch with secret-shaped assignment redaction.'],
+    ['Render, share, and preview selectively', 'The API returns a structured JSON report. Saving explicitly stores a public-unlisted SQLite snapshot without source contents; PDF uses the browser print dialog. Selecting a file triggers a separate bounded text fetch with secret-shaped assignment redaction. The Findings section can separately load GitHub weekly commit activity and a small, caveated recent-patch complexity trend.'],
   ];
   return (
     <details open className="rounded-2xl border border-[#d9ddd2] bg-[#faf9f4] p-4 sm:p-5">

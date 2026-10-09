@@ -24,6 +24,8 @@ venv/
 env/
 ENV/
 .venv
+.nlp
+
 
 # Backend
 backend/temp_repos/

@@ -25,6 +25,7 @@ env/
 ENV/
 .venv-repolens
 .nlp
+.venv-repolens
 
 
 # Backend

@@ -1,5 +1,7 @@
 """SQLite persistence for explicitly shared, unlisted RepoLens reports."""
 from __future__ import annotations
+from contextlib import closing
+
 
 import json
 import os
@@ -67,7 +69,7 @@ class ReportStore:
 
         report_id = secrets.token_urlsafe(15)
         created_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
-        with self._connect() as connection:
+        with closing(self._connect()) as connection, connection:
             connection.execute(
                 "INSERT INTO reports(id, repository_full_name, repository_key, owner, name, quality_score, created_at, report_json) VALUES(?, ?, ?, ?, ?, ?, ?, ?)",
                 (report_id, full_name, full_name.casefold(), owner, name, score, created_at, serialized),
@@ -87,7 +89,7 @@ class ReportStore:
         }
 
     def get(self, report_id: str) -> dict[str, Any] | None:
-        with self._connect() as connection:
+        with closing(self._connect()) as connection, connection:
             row = connection.execute("SELECT * FROM reports WHERE id = ?", (report_id,)).fetchone()
         if row is None:
             return None
@@ -98,7 +100,7 @@ class ReportStore:
 
     def latest_for_repository(self, owner: str, name: str) -> dict[str, Any] | None:
         full_name = f"{owner}/{name}"
-        with self._connect() as connection:
+        with closing(self._connect()) as connection, connection:
             row = connection.execute(
                 "SELECT * FROM reports WHERE repository_key = ? ORDER BY created_at DESC, rowid DESC LIMIT 1",
                 (full_name.casefold(),),

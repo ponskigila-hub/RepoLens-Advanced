@@ -202,7 +202,23 @@ class FileScanner:
                     pass
             elif name == "go.mod":
                 manifests.append(path)
-                dependencies.update(re.findall(r"^\s*([^\s]+)\s+v[0-9]", content, re.M))
+                in_require_block = False
+                for line in content.splitlines():
+                    stripped = line.strip()
+                    if stripped.startswith("require "):
+                        requirement = stripped[len("require "):].strip()
+                        if requirement == "(":
+                            in_require_block = True
+                            continue
+                        parts = requirement.split()
+                    elif in_require_block and stripped and not stripped.startswith(")"):
+                        parts = stripped.split()
+                    else:
+                        if in_require_block and stripped.startswith(")"):
+                            in_require_block = False
+                        continue
+                    if len(parts) >= 2 and re.match(r"^v[0-9]", parts[1]):
+                        dependencies.add(parts[0])
             elif name in {"cargo.toml", "gemfile", "composer.json", "pom.xml", "build.gradle"}:
                 manifests.append(path)
                 if name == "cargo.toml":
@@ -412,10 +428,65 @@ class FileScanner:
             "method": "Python AST; declaration-name patterns for JavaScript, TypeScript, Go, and Rust. Other languages may be omitted; names do not describe runtime behavior.",
         }
 
+    @staticmethod
+    def _dependency_imports(content: str, language: str, dependencies: list[str]) -> list[str]:
+        """Match direct manifest packages to literal imports; retain names, never source text."""
+        imported: set[str] = set()
+        try:
+            if language == "Python":
+                tree = ast.parse(content)
+                for node in ast.walk(tree):
+                    if isinstance(node, ast.Import):
+                        imported.update(alias.name.split(".", 1)[0].lower().replace("_", "-") for alias in node.names)
+                    elif isinstance(node, ast.ImportFrom) and node.module:
+                        imported.add(node.module.split(".", 1)[0].lower().replace("_", "-"))
+            elif language in {"JavaScript", "TypeScript"}:
+                patterns = (
+                    r"\b(?:from|import)\s*['\"]([^'\"]+)['\"]",
+                    r"\b(?:require|import)\s*\(\s*['\"]([^'\"]+)['\"]\s*\)",
+                )
+                for pattern in patterns:
+                    for match in re.finditer(pattern, content):
+                        imported.add(match.group(1).strip())
+            elif language == "Go":
+                pattern = r'(?m)^\s*(?:import\s+)?(?:(?:[A-Za-z_]\w*|_|\.)\s+)?["`]([^"`]+)["`]'
+                imported.update(match.group(1) for match in re.finditer(pattern, content))
+            elif language == "Rust":
+                imported.update(match.group(1).lower().replace("_", "-") for match in re.finditer(r"(?m)^\s*(?:use\s+|extern\s+crate\s+)(?:::)?([A-Za-z_]\w*)", content))
+        except (SyntaxError, ValueError):
+            if language != "Python":
+                raise
+
+        python_aliases = {
+            "beautifulsoup4": {"bs4"}, "opencv-python": {"cv2"}, "pillow": {"pil"},
+            "pyyaml": {"yaml"}, "scikit-learn": {"sklearn"}, "python-dotenv": {"dotenv"},
+        }
+        matches: set[str] = set()
+        for dependency in dependencies:
+            normalized = dependency.strip().lower().replace("_", "-")
+            if not normalized:
+                continue
+            if language in {"JavaScript", "TypeScript"}:
+                if any(specifier == dependency or specifier.startswith(dependency.rstrip("/") + "/") for specifier in imported):
+                    matches.add(dependency)
+            elif language == "Go":
+                if any(specifier == dependency or specifier.startswith(dependency.rstrip("/") + "/") for specifier in imported):
+                    matches.add(dependency)
+            else:
+                aliases = {normalized.replace("-", "_").replace("_", "-")} | python_aliases.get(normalized, set())
+                if normalized in imported or any(alias.lower().replace("_", "-") in imported for alias in aliases):
+                    matches.add(dependency)
+        return sorted(matches, key=str.casefold)
+
     def scan(self) -> dict[str, Any]:
         try:
             inventory, warnings = self._walk()
             dependencies = self._dependencies(inventory)
+            for item in inventory:
+                if item["category"] in {"source", "test"} and item.get("_content"):
+                    imports = self._dependency_imports(item["_content"], item["language"], dependencies["names"])
+                    if imports:
+                        item["dependency_imports"] = imports
             frameworks, framework_detection = self._framework_signals(inventory)
             technologies = sorted(set(self._detect_technologies(inventory)) | {framework["name"] for framework in frameworks})
             files: list[dict[str, Any]] = []

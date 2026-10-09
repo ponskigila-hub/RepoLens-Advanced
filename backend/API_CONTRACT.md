@@ -14,6 +14,8 @@
 
 Only public HTTPS GitHub repository URLs are accepted. `include_llm` enables an optional text narrative; it never changes measurements or scores. `use_mock` is a backwards-compatible flag that skips optional LLM generation; it does not return mock scores.
 
+`POST /api/analyze/stream` accepts the same body and emits Server-Sent Events: `progress` milestones (`fetch`, `inventory`, `metrics`, `report`, `complete`) followed by a `result` event containing the normal v1.3 report. Failures are delivered as an `error` event. Progress events report actual backend phase transitions; the full report payload is delivered together at the end.
+
 The response has `schema_version: "1.3"`; the [complete response fixture](examples/analyze-response.example.json) defines all returned fields. Stable groups include:
 
 | Group | Description |
@@ -27,7 +29,7 @@ The response has `schema_version: "1.3"`; the [complete response fixture](exampl
 | `project_guide` | README feature bullets with source paths, safe setup commands/package scripts, explicit runtime/language versions, direct dependencies with declared versions, and environment variable names from example templates only. Environment values are never returned. |
 | `scores` | Quality, maintainability, scalability, architecture, and production-readiness weighted scorecards. Components contain score, weight, and evidence. Method: `static-v2`. |
 | `quick_fix_checklist` | Five root-level file-presence checks: `README.md`, `LICENSE`/`LICENSE.*`/`COPYING`, `.github/workflows/*.yml`/`.yaml`, `Dockerfile`, and `.gitignore`. |
-| `file_breakdown`, `files`, `folder_breakdown` | Inventory totals, every path within the bounded 12,000-file scan cap, and folder aggregates. Generated/vendor directories and symlinks are excluded. Source text is not included in analysis responses or saved reports. |
+| `file_breakdown`, `files`, `folder_breakdown` | Inventory totals, every path within the bounded 12,000-file scan cap, and folder aggregates. `files[].dependency_imports` optionally lists direct declared packages with literal import matches in supported source files. Generated/vendor directories and symlinks are excluded. Source text is not included in analysis responses or saved reports. |
 | `insights` | Deterministic strengths, risks, recommendations, scan limitations, score snapshot, and isolated optional LLM state/text. |
 | Compatibility fields | Historical `ml_scores` and summary aliases remain available; they represent static-v2 values, not model predictions. |
 
@@ -121,6 +123,7 @@ The API uses a depth-1 clone, caps inventory at 12,000 files and text reads at 2
 |---|---|
 | `GET /health` | FastAPI health/methodology check. |
 | `POST /api/analyze` | Static analysis, optional LLM narrative, code map, and best-effort GitHub metadata. |
+| `POST /api/analyze/stream` | Same analysis response with backend stage events before the final report payload. |
 | `POST /api/history` | On-demand weekly commit activity and a caveated recent-patch complexity-change trend. |
 | `POST /api/file-preview` | Fresh bounded clone and safe on-demand UTF-8 text preview for one selected file. |
 | `POST /api/reports` | Save completed report. |

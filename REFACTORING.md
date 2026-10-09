@@ -146,3 +146,15 @@ The traceback showed `StaticAnalyzer._signals()` indexing `Path(".").parts[-1]`.
 - `frontend/components/ReportSections.tsx` applies those states to health-score bands, readiness checklist items, findings severities, large-file review signals, and recommendation priorities; the text labels remain visible so color is not the only cue.
 - `frontend/components/HistoryTrends.tsx` adds explicit legends to both SVG charts: commit-count bars identify their GitHub/sample source; complexity points distinguish increases and decreases, and identify the sample-order connector and zero-change baseline.
 - Verified on a live `FireClow/SuruAhai` report in light and dark mode. Both graphs and custom legends rendered; severity/status categories were visible in DOM and screenshots. The complexity display remained correctly titled “Complexity change” for a one-patch sample. Optimized Next.js production build and `git diff --check` passed.
+
+
+## Interactive repository exploration and scan feedback
+
+- Added `POST /api/analyze/stream` with actual backend progress events for depth-1 fetch, inventory/manifest parsing, AST/static measurement, report assembly, and completion. The existing JSON endpoint remains available. The client displays those events with an honest note that the report payload arrives together at completion, plus staged skeleton cards.
+- The scanner now maps supported literal import statements back to declared Python, JavaScript/TypeScript, Go, and Rust packages. Only package names and matching file paths are returned in `files[].dependency_imports`; no source contents are added to report snapshots. Matching is intentionally a lightweight static hint, not dependency resolution or runtime-use proof.
+- Added an interactive language-composition map and clickable GitHub-style byte-share bar; selected languages persist into the Files tab. Multi-select framework/package chips filter by detected import references and reveal manifest evidence/import paths on hover or keyboard focus.
+- Added a hover/click Quality score-factor breakdown, animated tab transitions, and one-click copy success feedback. Existing reduced-motion preferences are respected.
+
+## Final review corrections
+- Corrected Go `go.mod` parsing for both single-line and grouped `require` declarations, plus Go import groups/aliases and Rust crate imports. Added full scanner tests proving package filters return real file paths without source excerpts; backend suite passes 34 tests.
+- Raised dark-mode text contrast for selected dependency chips and active package filters; measured ratios are 9.61:1 and 7.94:1, respectively. The light palette is unchanged.

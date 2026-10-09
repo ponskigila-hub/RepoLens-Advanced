@@ -24,6 +24,8 @@ export default function AnalysisCard({ result, allowSave = true }: { result: Ana
   const [saving, setSaving] = useState(false);
   const [shareError, setShareError] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
+  const [selectedDependencies, setSelectedDependencies] = useState<string[]>([]);
 
   if (!result.success) {
     return <div role="alert" className="rounded-2xl border border-[#e8c9bd] bg-[#f8ece7] p-5 text-sm text-[#833a32]">{result.error || 'Analysis could not be completed.'}</div>;
@@ -32,6 +34,16 @@ export default function AnalysisCard({ result, allowSave = true }: { result: Ana
   const repository = result.repository;
   const fullName = repository?.full_name || result.repo_info?.name || 'Repository';
   const fileTotal = result.file_breakdown?.total ?? result.metrics?.files?.total ?? result.files?.length ?? 0;
+
+  const toggleLanguage = (language: string) => {
+    setSelectedLanguages((current) => current.includes(language) ? current.filter((item) => item !== language) : [...current, language]);
+  };
+  const toggleDependencies = (packages: string[]) => {
+    const unique = [...new Set(packages.filter(Boolean))];
+    setSelectedDependencies((current) => unique.every((name) => current.includes(name))
+      ? current.filter((name) => !unique.includes(name))
+      : [...new Set([...current, ...unique])]);
+  };
 
   const saveAndShare = async () => {
     setSaving(true);
@@ -101,11 +113,11 @@ export default function AnalysisCard({ result, allowSave = true }: { result: Ana
           </div>
         </aside>
 
-        <div role="tabpanel" aria-label={tabs.find((tab) => tab.id === activeTab)?.label} className="min-w-0">
+        <div key={activeTab} role="tabpanel" aria-label={tabs.find((tab) => tab.id === activeTab)?.label} className="report-panel-enter min-w-0">
           {activeTab === 'overview' && <AtAGlance result={result} />}
-          {activeTab === 'code-map' && <ArchitectureSection result={result} />}
-          {activeTab === 'stack' && <StackSection result={result} />}
-          {activeTab === 'files' && <FilesSection result={result} />}
+          {activeTab === 'code-map' && <ArchitectureSection result={result} selectedLanguages={selectedLanguages} onToggleLanguage={toggleLanguage} onViewFiles={() => setActiveTab('files')} />}
+          {activeTab === 'stack' && <StackSection result={result} selectedLanguages={selectedLanguages} onToggleLanguage={toggleLanguage} selectedDependencies={selectedDependencies} onToggleDependencies={toggleDependencies} onViewFiles={() => setActiveTab('files')} />}
+          {activeTab === 'files' && <FilesSection result={result} selectedLanguages={selectedLanguages} selectedDependencies={selectedDependencies} onToggleLanguage={toggleLanguage} onToggleDependency={(dependency) => toggleDependencies([dependency])} />}
           {activeTab === 'quick-fixes' && <QuickFixesSection result={result} />}
           {activeTab === 'findings' && <HotspotsAndFixes result={result} />}
           {activeTab === 'how-it-works' && <HowItWorksSection result={result} />}
@@ -120,5 +132,5 @@ export default function AnalysisCard({ result, allowSave = true }: { result: Ana
 }
 
 function CopyField({ label, value, copied, onCopy }: { label: string; value: string; copied: boolean; onCopy: () => void }) {
-  return <div className="min-w-0"><label className="text-[10px] font-bold uppercase tracking-[.1em] text-[#59665d]">{label}</label><div className="mt-1 flex gap-2"><input readOnly value={value} className="min-w-0 flex-1 rounded-lg border border-[#d9ddd2] bg-[#fffefa] px-3 py-2 font-mono text-[10px] text-[#304239]"/><button type="button" onClick={onCopy} className="shrink-0 rounded-lg border border-[#c5d8c5] px-3 py-2 text-[10px] font-semibold text-[#315d42]">{copied ? 'Copied' : 'Copy'}</button></div></div>;
+  return <div className="min-w-0"><label className="text-[10px] font-bold uppercase tracking-[.1em] text-[#59665d]">{label}</label><div className="mt-1 flex gap-2"><input readOnly value={value} className="min-w-0 flex-1 rounded-lg border border-[#d9ddd2] bg-[#fffefa] px-3 py-2 font-mono text-[10px] text-[#304239]"/><button type="button" onClick={onCopy} aria-live="polite" className={`copy-feedback-button relative inline-flex shrink-0 items-center gap-1.5 overflow-hidden rounded-lg border px-3 py-2 text-[10px] font-semibold ${copied ? 'copy-feedback-button--success' : ''}`}><span className="copy-feedback-icon" aria-hidden="true">{copied ? '✓' : '⧉'}</span><span>{copied ? 'Copied!' : 'Copy'}</span></button></div></div>;
 }

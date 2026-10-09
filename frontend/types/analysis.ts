@@ -24,6 +24,14 @@ export interface RepositoryFile {
   size_bytes?: number;
   lines?: number;
   language?: string;
+  dependency_imports?: string[];
+}
+
+export interface AnalysisProgress {
+  stage: 'fetch' | 'inventory' | 'metrics' | 'report' | 'complete';
+  message: string;
+  completed_steps: number;
+  total_steps: number;
 }
 
 export interface FilePreview {

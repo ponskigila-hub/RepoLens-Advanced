@@ -7,7 +7,7 @@ import RepoInput from '@/components/RepoInput';
 import RepoLensMark from '@/components/RepoLensMark';
 import ThemeToggle from '@/components/ThemeToggle';
 import { apiService } from '@/services/api';
-import type { AnalysisResult } from '@/types/analysis';
+import type { AnalysisProgress, AnalysisResult } from '@/types/analysis';
 
 const scanAreas = [
   { number: '01', title: 'Repository identity', detail: 'Owner, creation date, and visible contributors from GitHub.' },
@@ -18,6 +18,7 @@ const scanAreas = [
 export default function Home() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [scanProgress, setScanProgress] = useState<AnalysisProgress[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [apiStatus, setApiStatus] = useState<'checking' | 'online' | 'offline'>('checking');
   const reportRef = useRef<HTMLDivElement>(null);
@@ -40,8 +41,11 @@ export default function Home() {
     setIsAnalyzing(true);
     setError(null);
     setResult(null);
+    setScanProgress([]);
     try {
-      const data = await apiService.analyzeRepository(url, !includeLlm);
+      const data = await apiService.analyzeRepositoryWithProgress(url, !includeLlm, (event) => {
+        setScanProgress((current) => [...current.slice(-7), event]);
+      });
       setResult(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'The repository could not be analyzed.');
@@ -97,7 +101,7 @@ export default function Home() {
             </div>
             <a href="#how-it-works" className="mt-5 inline-flex items-center gap-2 text-xs font-semibold text-[#315d42] underline decoration-[#a9bea4] underline-offset-4">How RepoLens produces a report <span aria-hidden="true">↓</span></a>
           </aside>
-          {isAnalyzing && <div className="surface-paper-gradient rounded-2xl border border-[#d9ddd2] bg-[#fffefa] p-5 shadow-sm"><LoadingSpinner /></div>}
+          {isAnalyzing && <div className="surface-paper-gradient rounded-2xl border border-[#d9ddd2] bg-[#fffefa] p-5 shadow-sm"><LoadingSpinner events={scanProgress} /></div>}
         </div>
       </section>
 

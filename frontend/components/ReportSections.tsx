@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import RepositoryFiles from '@/components/RepositoryFiles';
 import HistoryTrends from '@/components/HistoryTrends';
 import TechLogo from '@/components/TechLogo';
@@ -46,6 +46,33 @@ function languageStatistics(result: AnalysisResult) {
   }).filter((item) => item.files > 0 || item.bytes > 0)
     .sort((a, b) => b.bytes - a.bytes || b.files - a.files || a.name.localeCompare(b.name));
   return { items, totalBytes };
+}
+
+function LanguageTreemap({ languages, selectedLanguages, onToggleLanguage, onViewFiles }: {
+  languages: ReturnType<typeof languageStatistics>['items'];
+  selectedLanguages: string[];
+  onToggleLanguage?: (language: string) => void;
+  onViewFiles?: () => void;
+}) {
+  const countTotal = languages.reduce((total, item) => total + item.files, 0);
+  return <div>
+    <div className="grid grid-cols-12 auto-rows-[3.35rem] gap-2" role="group" aria-label="Repository language composition; choose a language to filter files">
+      {languages.map((language) => {
+        const proportion = language.share ?? (countTotal ? language.files / countTotal * 100 : 8);
+        const span = Math.max(2, Math.min(12, Math.round(proportion / 100 * 12)));
+        const color = languageColor(language.name);
+        return <button key={language.name} type="button" onClick={() => onToggleLanguage?.(language.name)} aria-pressed={selectedLanguages.includes(language.name)} title={`${language.name} · ${language.share === null ? 'share unavailable' : `${language.share.toFixed(1)}% of scanned source/test bytes`} · ${language.files} files`} className="language-tile relative flex min-w-0 flex-col justify-center rounded-xl border px-3 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2" style={{ gridColumn: `span ${span}`, borderColor: `color-mix(in srgb, ${color} 42%, var(--line))`, backgroundColor: `color-mix(in srgb, ${color} 15%, var(--panel-bg))` }}>
+          <span className="flex min-w-0 items-center gap-2"><TechLogo name={language.name} small /><span className="truncate text-xs font-semibold text-[#203229]">{language.name}</span></span>
+          <span className="mt-1 pl-6 text-[10px] text-[#59665d]">{language.share === null ? 'share n/a' : `${language.share.toFixed(1)}%`} · {number(language.files)} files</span>
+        </button>;
+      })}
+      {!languages.length && <p className="col-span-12 text-sm text-[#59665d]">No source/test language data was returned.</p>}
+    </div>
+    {!!selectedLanguages.length && <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg bg-[#f6f8f2] px-3 py-2 text-[10px] text-[#45594c]">
+      <span>Selected: {selectedLanguages.join(', ')}</span>
+      <button type="button" onClick={onViewFiles} className="ml-auto rounded-md border border-[#9fbea1] bg-[#fffefa] px-2.5 py-1.5 font-semibold text-[#315d42] hover:bg-[#edf3e9]">View matching files →</button>
+    </div>}
+  </div>;
 }
 
 function scoreFor(result: AnalysisResult, key: string): number | undefined {
@@ -109,22 +136,32 @@ function ScoreTile({ label, value, note }: { label: string; value?: number; note
   );
 }
 
-function QualityCircle({ value, methodology }: { value?: number; methodology: string }) {
+function QualityCircle({ value, methodology, components = [] }: { value?: number; methodology: string; components?: DynamicScore['components'] }) {
+  const [open, setOpen] = useState(false);
+  const [pinned, setPinned] = useState(false);
   const safe = value === undefined ? undefined : Math.max(0, Math.min(100, value));
   const radius = 46;
   const circumference = 2 * Math.PI * radius;
   const dashOffset = circumference * (1 - (safe ?? 0) / 100);
   return (
     <div className="flex flex-col items-center justify-center rounded-xl border border-[#d9ddd2] bg-[#f7f8f3] p-3 text-center">
-      <div className="relative h-32 w-32">
-        <svg viewBox="0 0 112 112" className="h-full w-full" role="img" aria-label={`Quality score ${safe === undefined ? 'not available' : `${safe.toFixed(1)} out of 100`}`}>
-          <circle cx="56" cy="56" r={radius} fill="none" stroke="var(--line)" strokeWidth="8" />
-          <circle cx="56" cy="56" r={radius} fill="none" stroke="currentColor" strokeWidth="8" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={dashOffset} transform="rotate(-90 56 56)" className={tone(safe)} />
-        </svg>
-        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-          <span className={`text-2xl font-semibold tracking-tight ${tone(safe)}`}>{safe === undefined ? '—' : safe.toFixed(1)}</span>
-          <span className="mt-0.5 text-[9px] font-bold uppercase tracking-[.1em] text-[#59665d]">Quality / 100</span>
-        </div>
+      <div className="relative z-20" onMouseEnter={() => setOpen(true)} onMouseLeave={() => { if (!pinned) setOpen(false); }}>
+        <button type="button" aria-expanded={open} aria-label={`Quality score ${safe === undefined ? 'not available' : `${safe.toFixed(1)} out of 100`}. Activate to view score factors.`} aria-controls="quality-score-breakdown" onFocus={() => setOpen(true)} onClick={() => { setPinned((current) => !current); setOpen(true); }} onKeyDown={(event) => { if (event.key === 'Escape') { setOpen(false); setPinned(false); } }} className="relative h-32 w-32 rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#47734f]">
+          <svg viewBox="0 0 112 112" className="h-full w-full" aria-hidden="true">
+            <circle cx="56" cy="56" r={radius} fill="none" stroke="var(--line)" strokeWidth="8" />
+            <circle cx="56" cy="56" r={radius} fill="none" stroke="currentColor" strokeWidth="8" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={dashOffset} transform="rotate(-90 56 56)" className={tone(safe)} />
+          </svg>
+          <span className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+            <span className={`text-2xl font-semibold tracking-tight ${tone(safe)}`}>{safe === undefined ? '—' : safe.toFixed(1)}</span>
+            <span className="mt-0.5 text-[9px] font-bold uppercase tracking-[.1em] text-[#59665d]">Quality / 100</span>
+            <span className="mt-1 text-[9px] font-medium text-[#315d42]">View factors</span>
+          </span>
+        </button>
+        {open && <div id="quality-score-breakdown" role="region" aria-label="Quality score calculation factors" className="dependency-tooltip absolute left-1/2 top-full mt-2 w-[min(20rem,calc(100vw-2rem))] -translate-x-1/2 rounded-xl border p-3 text-left shadow-xl">
+          <div className="flex items-center justify-between gap-2"><p className="text-xs font-semibold">How Quality was scored</p><button type="button" onClick={() => { setOpen(false); setPinned(false); }} className="rounded px-1.5 py-0.5 text-[10px] font-semibold text-[#315d42] hover:bg-[#edf3e9]">Close</button></div>
+          <p className="mt-1 text-[10px] leading-4 text-[#59665d]">Weighted static factors. No runtime behavior is measured.</p>
+          {components.length ? <ul className="mt-2 space-y-2">{components.map((component) => <li key={component.name} className="border-t border-[#e3e1d7] pt-2"><div className="flex items-center justify-between gap-2"><span className="text-[10px] font-semibold">{component.name}</span><span className="font-mono text-[10px]">{component.score.toFixed(1)} · {(component.weight * 100).toFixed(0)}% weight</span></div><p className="mt-1 text-[9px] leading-4 text-[#59665d]">{component.evidence}</p></li>)}</ul> : <p className="mt-2 text-[10px] text-[#59665d]">No component-level evidence was included in this report.</p>}
+        </div>}
       </div>
       <p className={`mt-1 status-pill status-pill--${scoreTone(safe)}`}>{scoreBand(safe)}</p>
       <p className="mt-1 text-[10px] text-[#59665d]">{methodology}</p>
@@ -143,6 +180,7 @@ export function AtAGlance({ result }: { result: AnalysisResult }) {
   const code = result.code_overview;
   const guide = result.project_guide;
   const quality = scoreFor(result, 'quality');
+  const qualityComponents = result.scores?.quality?.components ?? result.scores?.overall_quality?.components ?? [];
   const identity = result.github_metadata;
   const owner = identity?.owner?.login || result.repository?.owner;
   const ownerUrl = identity?.owner?.html_url || (owner ? `https://github.com/${encodeURIComponent(owner)}` : undefined);
@@ -169,7 +207,7 @@ export function AtAGlance({ result }: { result: AnalysisResult }) {
 
       <Panel title="Repository health" note="Measured static signals. These scores do not represent a runtime test or a security certification.">
         <div className="grid gap-3 sm:grid-cols-[8.5rem_minmax(0,1fr)]">
-          <QualityCircle value={quality} methodology={result.score_methodology?.version || result.ml_scores?.model_used || 'static score'} />
+          <QualityCircle value={quality} methodology={result.score_methodology?.version || result.ml_scores?.model_used || 'static score'} components={qualityComponents} />
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-2">
             <ScoreTile label="Maintainability" value={scoreFor(result, 'maintainability')} note="Changeability signals" />
             <ScoreTile label="Scalability" value={scoreFor(result, 'scalability')} note="Structure and growth" />
@@ -195,7 +233,7 @@ export function AtAGlance({ result }: { result: AnalysisResult }) {
   );
 }
 
-export function StackSection({ result }: { result: AnalysisResult }) {
+export function StackSection({ result, selectedLanguages = [], onToggleLanguage, selectedDependencies = [], onToggleDependencies, onViewFiles }: { result: AnalysisResult; selectedLanguages?: string[]; onToggleLanguage?: (language: string) => void; selectedDependencies?: string[]; onToggleDependencies?: (packages: string[]) => void; onViewFiles?: () => void }) {
   const guide = result.project_guide;
   const { items: languages, totalBytes: totalLanguageBytes } = languageStatistics(result);
   const versions = new Map((guide?.language_versions ?? []).map((item) => [item.name.toLowerCase(), item.version]));
@@ -205,9 +243,10 @@ export function StackSection({ result }: { result: AnalysisResult }) {
     <div className="space-y-4">
       <Panel title="Languages and frameworks" note="GitHub-style language share is estimated from scanned source/test bytes; counts are files in the bounded inventory.">
         {languages.length ? <div>
-          {totalLanguageBytes > 0 ? <div role="img" aria-label="Language distribution by scanned source and test byte size" className="mb-3 flex h-3 overflow-hidden rounded-full bg-[#eeece3]">
-            {languages.map((language) => <span key={language.name} title={`${language.name}: ${language.share?.toFixed(1)}%`} style={{ width: `${language.share ?? 0}%`, backgroundColor: languageColor(language.name) }} />)}
+          {totalLanguageBytes > 0 ? <div role="group" aria-label="Interactive language distribution by scanned source and test bytes" className="mb-3 flex h-4 overflow-hidden rounded-full bg-[#eeece3]">
+            {languages.map((language) => <button key={language.name} type="button" onClick={() => onToggleLanguage?.(language.name)} aria-label={`Filter by ${language.name}: ${language.share?.toFixed(1)} percent, ${language.files} files`} aria-pressed={selectedLanguages.includes(language.name)} title={`${language.name}: ${language.share?.toFixed(1)}% · ${language.files} files`} className="h-full min-w-[3px] border-r border-white/70 transition-[width,filter] hover:brightness-110 focus-visible:z-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white" style={{ width: `${language.share ?? 0}%`, backgroundColor: languageColor(language.name), filter: selectedLanguages.length && !selectedLanguages.includes(language.name) ? 'saturate(.25) opacity(.45)' : undefined }} />)}
           </div> : <p className="mb-3 text-[10px] text-[#59665d]">Byte share unavailable for this snapshot; file counts are shown instead.</p>}
+          {!!selectedLanguages.length && <div className="mb-3 flex items-center justify-between gap-2 rounded-lg bg-[#f6f8f2] px-3 py-2"><span className="text-[10px] text-[#45594c]">Selected: {selectedLanguages.join(', ')}</span><button type="button" onClick={onViewFiles} className="shrink-0 text-[10px] font-semibold text-[#315d42] underline underline-offset-2">View files →</button></div>}
           <div className="flex flex-wrap gap-2.5">
             {displayedLanguages.map((language) => {
               const version = versions.get(language.name.toLowerCase());
@@ -224,14 +263,15 @@ export function StackSection({ result }: { result: AnalysisResult }) {
       </Panel>
       <details className="rounded-2xl border border-[#d9ddd2] bg-[#faf9f4] p-4 sm:p-5">
         <summary className="cursor-pointer text-sm font-semibold text-[#203229]">Setup, versions, environment, frameworks, and dependencies</summary>
-        <div className="mt-4"><GettingStartedSection result={result} /></div>
+        <div className="mt-4"><GettingStartedSection result={result} selectedDependencies={selectedDependencies} onToggleDependencies={onToggleDependencies} onViewFiles={onViewFiles} /></div>
       </details>
     </div>
   );
 }
 
-export function ArchitectureSection({ result }: { result: AnalysisResult }) {
+export function ArchitectureSection({ result, selectedLanguages = [], onToggleLanguage, onViewFiles }: { result: AnalysisResult; selectedLanguages?: string[]; onToggleLanguage?: (language: string) => void; onViewFiles?: () => void }) {
   const code = result.code_overview;
+  const { items: languages } = languageStatistics(result);
   const folders = (result.folder_breakdown ?? []).slice().sort((a, b) => b.source_files - a.source_files || b.lines - a.lines);
   const stages = [
     ['Repository URL', 'Public GitHub input'],
@@ -260,6 +300,9 @@ export function ArchitectureSection({ result }: { result: AnalysisResult }) {
             {!folders.length && <p className="text-sm text-[#59665d]">No folder aggregates were returned.</p>}
           </div>
       </Panel>
+      <Panel title="Interactive language map" note="Tiles are sized approximately by scanned source/test bytes. Select one or more, then choose View matching files; package filters can be layered there.">
+        <LanguageTreemap languages={languages} selectedLanguages={selectedLanguages} onToggleLanguage={onToggleLanguage} onViewFiles={onViewFiles} />
+      </Panel>
       <Panel title="Function and class names" note={code?.symbols.method || 'Static symbol extraction is available only for supported languages.'}>
           <p className="mb-3 text-xs text-[#59665d]">{number(code?.symbols.count)} names from {number(code?.symbols.parsed_files)} parsed source files; the symbol list is bounded.</p>
           <div className="grid gap-2 sm:grid-cols-2">
@@ -274,10 +317,10 @@ export function ArchitectureSection({ result }: { result: AnalysisResult }) {
   );
 }
 
-export function FilesSection({ result }: { result: AnalysisResult }) {
+export function FilesSection({ result, selectedLanguages = [], selectedDependencies = [], onToggleLanguage, onToggleDependency }: { result: AnalysisResult; selectedLanguages?: string[]; selectedDependencies?: string[]; onToggleLanguage?: (language: string) => void; onToggleDependency?: (dependency: string) => void }) {
   const files = result.files ?? [];
   const total = result.file_breakdown?.total ?? result.metrics?.files?.total ?? files.length;
-  return <RepositoryFiles repositoryUrl={result.repository?.url} files={files} totalFiles={total} sampleLimit={result.file_breakdown?.sample_limit} warnings={result.insights?.scan_warnings ?? []} />;
+  return <RepositoryFiles repositoryUrl={result.repository?.url} files={files} totalFiles={total} sampleLimit={result.file_breakdown?.sample_limit} warnings={result.insights?.scan_warnings ?? []} languageFilters={selectedLanguages} dependencyFilters={selectedDependencies} onToggleLanguage={onToggleLanguage} onToggleDependency={onToggleDependency} />;
 }
 
 function FolderCard({ folder }: { folder: RepositoryFolder }) {
@@ -287,14 +330,51 @@ function FolderCard({ folder }: { folder: RepositoryFolder }) {
   </div>;
 }
 
-export function GettingStartedSection({ result }: { result: AnalysisResult }) {
+function DependencyFilterChip({ id, label, packages, detail, selected, locations, onToggle }: {
+  id: string;
+  label: string;
+  packages: string[];
+  detail: string;
+  selected: boolean;
+  locations: Map<string, string[]>;
+  onToggle?: (packages: string[]) => void;
+}) {
+  const importedPaths = [...new Set(packages.flatMap((name) => locations.get(name) ?? []))].sort().slice(0, 5);
+  const packageList = [...new Set(packages)];
+  return <button type="button" aria-pressed={selected} aria-describedby={id} onClick={() => onToggle?.(packageList)} className={`dependency-filter-chip group relative inline-flex min-h-9 items-center gap-2 rounded-lg border px-2.5 py-1.5 text-left transition ${selected ? 'border-[#47734f] bg-[#e8f0e6] text-[#244c32] ring-2 ring-[#47734f]/20' : 'border-[#d9ddd2] bg-[#faf9f4] text-[#304239] hover:border-[#9fbea1] hover:bg-[#eff5eb]'}`}>
+    <span className="min-w-0"><span className="block truncate text-[11px] font-semibold">{label}</span><span className="block truncate font-mono text-[9px] text-[#59665d]">{detail}</span></span>
+    <span className="dependency-tooltip pointer-events-none absolute bottom-full left-1/2 z-40 mb-2 hidden w-[min(18rem,calc(100vw-2rem))] -translate-x-1/2 rounded-xl border p-3 text-left group-hover:block group-focus-visible:block group-focus-within:block" role="tooltip" id={id}>
+      <span className="block text-[10px] font-semibold">{label} · import evidence</span>
+      <span className="mt-1 block text-[9px] leading-4 text-[#59665d]">Declared package(s): {packageList.join(', ') || 'No package mapping available'}</span>
+      {importedPaths.length ? <><span className="mt-2 block text-[9px] font-semibold">Literal imports matched in:</span>{importedPaths.map((path) => <span key={path} className="mt-1 block truncate font-mono text-[9px]" title={path}>{path}</span>)}{[...new Set(packages.flatMap((name) => locations.get(name) ?? []))].length > importedPaths.length && <span className="mt-1 block text-[9px] text-[#59665d]">More matching files are listed in Files.</span>}</> : <span className="mt-2 block text-[9px] leading-4 text-[#59665d]">No literal import match in the scanned source/test files. Declaration alone does not prove runtime use.</span>}
+    </span>
+  </button>;
+}
+
+export function GettingStartedSection({ result, selectedDependencies = [], onToggleDependencies, onViewFiles }: { result: AnalysisResult; selectedDependencies?: string[]; onToggleDependencies?: (packages: string[]) => void; onViewFiles?: () => void }) {
+  const [showAllDependencies, setShowAllDependencies] = useState(false);
   const guide: ProjectGuide | undefined = result.project_guide;
   const commands = guide?.commands ?? [];
   const versions = guide?.language_versions ?? [];
-  const deps = guide?.direct_dependencies ?? [];
   const envVars = guide?.environment_variables ?? [];
   const frameworks = result.technology_stack?.frameworks ?? [];
   const manifests = result.metrics?.dependencies?.manifests ?? [];
+  const deps = useMemo(() => {
+    const declared = guide?.direct_dependencies ?? [];
+    if (declared.length) return declared;
+    return (result.metrics?.dependencies?.names ?? []).map((name) => ({ name, version: 'declared', manifest: manifests[0] ?? 'manifest', section: 'direct dependency' }));
+  }, [guide?.direct_dependencies, result.metrics?.dependencies?.names, manifests]);
+  const importLocations = useMemo(() => {
+    const locations = new Map<string, string[]>();
+    for (const file of result.files ?? []) for (const dependency of file.dependency_imports ?? []) {
+      const current = locations.get(dependency) ?? [];
+      current.push(file.path);
+      locations.set(dependency, current);
+    }
+    return locations;
+  }, [result.files]);
+  const dependencyItems = [...new Map(deps.map((item) => [item.name.toLowerCase(), item])).values()];
+  const visibleDependencyItems = showAllDependencies ? dependencyItems : dependencyItems.slice(0, 18);
   return (
     <div className="space-y-4">
       <Panel title="Run commands found" note="Commands are copied from README code blocks or formed from declared package scripts/manifests. Check each source before running it.">
@@ -314,10 +394,15 @@ export function GettingStartedSection({ result }: { result: AnalysisResult }) {
         </Panel>
       </div>
 
-      <Panel title="Frameworks, tools, and dependencies" note="Direct declarations from the detected manifests; packages may not all be imported or active at runtime.">
-        {!!frameworks.length && <div className="mb-4 flex flex-wrap gap-2">{frameworks.map((item) => <span key={item.name} title={item.evidence.map((evidence) => evidence.manifest).join(', ')} className="inline-flex items-center gap-2 rounded-lg border border-[#d9ddd2] bg-[#faf9f4] px-2.5 py-1.5 text-xs text-[#304239]"><TechLogo name={item.name} small />{item.name}</span>)}</div>}
-        {deps.length ? <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">{deps.slice(0, 18).map((item) => <div key={`${item.manifest}-${item.name}`} className="rounded-lg border border-[#e3e1d7] bg-[#faf9f4] px-3 py-2"><div className="flex items-center justify-between gap-2"><code className="truncate text-xs font-semibold text-[#203229]">{item.name}</code><code className="shrink-0 text-[10px] text-[#315d42]">{item.version}</code></div><p className="mt-1 truncate font-mono text-[9px] text-[#59665d]" title={`${item.manifest} · ${item.section}`}>{item.manifest} · {item.section}</p></div>)}</div> : <p className="text-sm text-[#59665d]">No direct dependency versions could be extracted.</p>}
-        {deps.length > 18 && <p className="mt-2 text-right text-[10px] text-[#59665d]">Showing 18 of {number(deps.length)} parsed entries.</p>}
+      <Panel title="Frameworks, tools, and dependencies" note="Select one or more chips to filter Files by literal imports. Hover or focus a chip for manifest evidence and matching paths; a declaration is not proof of runtime use.">
+        {!!frameworks.length && <div className="mb-4"><p className="mb-2 text-[10px] font-bold uppercase tracking-[.1em] text-[#59665d]">Framework filters</p><div className="flex flex-wrap gap-2">{frameworks.map((item) => {
+          const packages = item.packages ?? [];
+          return <DependencyFilterChip key={`framework-${item.name}`} id={`framework-tooltip-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} label={item.name} packages={packages} detail={`${packages.join(', ') || item.role} · framework`} selected={packages.some((name) => selectedDependencies.includes(name))} locations={importLocations} onToggle={onToggleDependencies} />;
+        })}</div></div>}
+        {dependencyItems.length ? <><p className="mb-2 text-[10px] font-bold uppercase tracking-[.1em] text-[#59665d]">Declared package filters</p><div className="flex flex-wrap gap-2">{visibleDependencyItems.map((item) => <DependencyFilterChip key={`package-${item.name.toLowerCase()}`} id={`package-tooltip-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} label={item.name} packages={[item.name]} detail={`${item.version} · ${item.manifest}`} selected={selectedDependencies.includes(item.name)} locations={importLocations} onToggle={onToggleDependencies} />)}</div>
+          {dependencyItems.length > 18 && <button type="button" onClick={() => setShowAllDependencies((current) => !current)} className="mt-2 text-[10px] font-semibold text-[#315d42] underline underline-offset-2">{showAllDependencies ? 'Show fewer packages' : `Show all ${number(dependencyItems.length)} packages`}</button>}
+        </> : <p className="text-sm text-[#59665d]">No direct dependency versions could be extracted.</p>}
+        {!!selectedDependencies.length && <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg bg-[#f6f8f2] px-3 py-2"><span className="text-[10px] text-[#45594c]">Selected import filters: {selectedDependencies.join(', ')}</span><button type="button" onClick={onViewFiles} className="ml-auto rounded-md border border-[#9fbea1] bg-[#fffefa] px-2.5 py-1.5 text-[10px] font-semibold text-[#315d42] hover:bg-[#edf3e9]">View matching files →</button></div>}
         <div className="mt-4 border-t border-[#e3e1d7] pt-3"><p className="text-[10px] font-semibold uppercase tracking-[.1em] text-[#59665d]">Dependency manifests</p><p className="mt-2 break-words font-mono text-[10px] text-[#45594c]">{manifests.length ? manifests.join(' · ') : 'No supported dependency manifest detected.'}</p></div>
       </Panel>
     </div>

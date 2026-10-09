@@ -2,13 +2,15 @@ from __future__ import annotations
 
 import asyncio
 from collections import Counter
+import json
 from pathlib import Path
 import re
-from typing import Any
+from typing import Any, Callable
 from urllib.parse import urlparse
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
+from starlette.responses import StreamingResponse
 from starlette.concurrency import run_in_threadpool
 
 from services.analysis_service import AnalysisService
@@ -76,8 +78,44 @@ class AnalyzeResponse(BaseModel):
     error: str | None = None
 
 
+def _emit_progress(progress: Callable[[dict[str, Any]], None] | None, stage: str, message: str, completed_steps: int) -> None:
+    if progress:
+        progress({"stage": stage, "message": message, "completed_steps": completed_steps, "total_steps": 4})
+
+
 @router.post("/analyze", response_model=AnalyzeResponse)
 async def analyze_repository(request: AnalyzeRequest):
+    return await _run_analysis(request)
+
+
+@router.post("/analyze/stream")
+async def analyze_repository_stream(request: AnalyzeRequest):
+    async def event_stream():
+        queue: asyncio.Queue[dict[str, Any] | None] = asyncio.Queue()
+        task = asyncio.create_task(_run_analysis(request, queue.put_nowait))
+        task.add_done_callback(lambda _: queue.put_nowait(None))
+        yield ": connected\n\n"
+        while True:
+            event = await queue.get()
+            if event is None:
+                break
+            yield f"event: progress\ndata: {json.dumps(event, separators=(',', ':'))}\n\n"
+        try:
+            result = task.result()
+        except HTTPException as exc:
+            payload = json.dumps({"detail": exc.detail, "status": exc.status_code}, separators=(',', ':'))
+            yield f"event: error\ndata: {payload}\n\n"
+            return
+        except Exception:
+            yield 'event: error\ndata: {"detail":"Analysis failed unexpectedly."}\n\n'
+            return
+        yield f"event: result\ndata: {result.model_dump_json()}\n\n"
+
+    return StreamingResponse(event_stream(), media_type="text/event-stream", headers={"Cache-Control": "no-cache, no-transform", "X-Accel-Buffering": "no"})
+
+
+async def _run_analysis(request: AnalyzeRequest, progress: Callable[[dict[str, Any]], None] | None = None):
+    _emit_progress(progress, "fetch", "Validating the public GitHub URL and fetching a depth-1 snapshot.", 0)
     if not repo_cloner.validate_github_url(request.github_url):
         raise HTTPException(status_code=422, detail="Provide a public GitHub repository URL in the form https://github.com/owner/repository.")
     clone = await run_in_threadpool(repo_cloner.clone_repository, request.github_url)
@@ -85,18 +123,21 @@ async def analyze_repository(request: AnalyzeRequest):
         raise HTTPException(status_code=400, detail=clone.get("error", "Repository clone failed."))
     local_path = clone["local_path"]
     try:
+        _emit_progress(progress, "inventory", "Snapshot received; walking repository paths and parsing manifests.", 1)
         scan, github_metadata = await asyncio.gather(
             run_in_threadpool(FileScanner(local_path).scan),
             _best_effort_github_metadata(clone["owner"], clone["repository"]),
         )
         if not scan.get("success"):
             raise HTTPException(status_code=500, detail=scan.get("error", "Repository scan failed."))
+        _emit_progress(progress, "metrics", f"Inventory complete ({scan.get('file_count', 0)} paths); measuring AST and static-code signals.", 2)
         static = await run_in_threadpool(static_analyzer.analyze, scan)
         owner, name = clone["owner"], clone["repository"]
         scores = static["scores"]
         score_values = {key: value["score"] for key, value in scores.items()}
         insights = _build_insights(scan, static)
         llm_state = {"status": "not_requested", "provider": None, "model": None, "text": None, "error": None}
+        _emit_progress(progress, "report", "Scores measured; assembling findings and the structured report.", 3)
         if request.include_llm and not request.use_mock:
             prompt = prompt_builder.build_static_analysis_prompt(clone["repo_name"], scan, static)
             llm_state = await run_in_threadpool(analysis_service.generate_insights, prompt)
@@ -145,7 +186,7 @@ async def analyze_repository(request: AnalyzeRequest):
             "production_readiness": _score_band(score_values["production_readiness"]),
             "final_assessment": f"Static analysis rates this repository {score_band.lower()} for quality using {scan['file_count']} scanned files and {scan['total_lines']} source/test lines. Scores are evidence-based heuristics and do not claim runtime or human-review validation.",
         }
-        return AnalyzeResponse(
+        response = AnalyzeResponse(
             success=True, schema_version="1.3", repository={"owner": owner, "name": name, "full_name": clone["repo_name"], "url": f"https://github.com/{owner}/{name}", "clone_depth": clone["clone_depth"]},
             repo_info={"name": clone["repo_name"], "technologies": technologies, "file_count": scan["file_count"], "total_lines": scan["total_lines"], "is_mock": False, "ml_model_used": static["score_methodology"]["version"]},
             metrics=static["metrics"], scores=scores, score_methodology=static["score_methodology"],
@@ -163,6 +204,8 @@ async def analyze_repository(request: AnalyzeRequest):
             security_analysis=_security_issues(scan, static), performance_analysis=_performance_issues(static),
             improvement_suggestions=insights["recommendations"], final_summary=final_summary,
         )
+        _emit_progress(progress, "complete", "Analysis complete; the report is ready to explore.", 4)
+        return response
     finally:
         repo_cloner.cleanup_repo(local_path)
 

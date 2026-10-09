@@ -22,12 +22,20 @@ export default function RepositoryFiles({
   totalFiles,
   sampleLimit,
   warnings = [],
+  languageFilters = [],
+  dependencyFilters = [],
+  onToggleLanguage,
+  onToggleDependency,
 }: {
   repositoryUrl?: string;
   files: RepositoryFile[];
   totalFiles: number;
   sampleLimit?: number;
   warnings?: string[];
+  languageFilters?: string[];
+  dependencyFilters?: string[];
+  onToggleLanguage?: (language: string) => void;
+  onToggleDependency?: (dependency: string) => void;
 }) {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('all');
@@ -43,9 +51,11 @@ export default function RepositoryFiles({
     return files.filter((file) => {
       const matchesCategory = category === 'all' || file.category === category;
       const matchesQuery = !needle || `${file.path} ${file.language ?? ''} ${file.extension ?? ''}`.toLowerCase().includes(needle);
-      return matchesCategory && matchesQuery;
+      const matchesLanguage = !languageFilters.length || languageFilters.includes(file.language ?? '');
+      const matchesDependency = !dependencyFilters.length || (file.dependency_imports ?? []).some((name) => dependencyFilters.includes(name));
+      return matchesCategory && matchesQuery && matchesLanguage && matchesDependency;
     });
-  }, [files, category, query]);
+  }, [files, category, query, languageFilters, dependencyFilters]);
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, pageCount - 1);
   const pageFiles = filtered.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
@@ -122,6 +132,13 @@ export default function RepositoryFiles({
         ))}
       </div>
 
+      {(languageFilters.length > 0 || dependencyFilters.length > 0) && <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[#c5d8c5] bg-[#edf3e9] p-3" aria-label="Active file filters">
+        <span className="mr-1 text-[10px] font-bold uppercase tracking-[.08em] text-[#315d42]">Active filters</span>
+        {languageFilters.map((language) => <button key={`language-${language}`} type="button" onClick={() => onToggleLanguage?.(language)} className="rounded-full border border-[#9fbea1] bg-[#fffefa] px-2.5 py-1 text-[10px] font-semibold text-[#315d42]">{language} ×</button>)}
+        {dependencyFilters.map((dependency) => <button key={`dependency-${dependency}`} type="button" onClick={() => onToggleDependency?.(dependency)} className="rounded-full border border-[#c9aa8c] bg-[#fffaf6] px-2.5 py-1 font-mono text-[10px] font-semibold text-[#78452f]">{dependency} ×</button>)}
+        <span className="ml-auto text-[10px] text-[#45594c]">Language filters are OR; package filters are OR; the two groups combine.</span>
+      </div>}
+
       <div className="overflow-hidden rounded-2xl border border-[#d9ddd2] bg-[#fffefa]">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[650px] border-collapse text-left text-sm">
@@ -163,7 +180,7 @@ export default function RepositoryFiles({
                   </tr>
                 );
               })}
-              {!pageFiles.length && <tr><td colSpan={5} className="px-4 py-10 text-center text-sm text-[#59665d]">No scanned files match this filter.</td></tr>}
+              {!pageFiles.length && <tr><td colSpan={5} className="px-4 py-10 text-center text-sm text-[#59665d]">No scanned files match this filter. Dependency matches are based only on literal imports found in the bounded source scan.</td></tr>}
             </tbody>
           </table>
         </div>

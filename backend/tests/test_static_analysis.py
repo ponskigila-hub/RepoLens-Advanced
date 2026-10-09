@@ -251,6 +251,31 @@ class StaticAnalysisTests(unittest.TestCase):
         self.assertIn("project_guide", data)
         self.assertIn("language_versions", data["project_guide"])
 
+    def test_analyze_stream_emits_backend_stages_and_final_report(self):
+        self.fixture()
+        originals = (
+            analyze_route.repo_cloner.clone_repository,
+            analyze_route.repo_cloner.cleanup_repo,
+            analyze_route.github_metadata_service.fetch,
+        )
+        analyze_route.repo_cloner.clone_repository = lambda url: {"success": True, "local_path": str(self.root), "repo_name": "sample/project", "owner": "sample", "repository": "project", "clone_depth": 1}
+        analyze_route.repo_cloner.cleanup_repo = lambda path: True
+        analyze_route.github_metadata_service.fetch = lambda owner, repository: {"status": "available", "created_at": None, "owner": None, "contributors": [], "contributors_status": "none_reported", "contributors_truncated": False, "contributors_limit": 10, "source": "test", "note": "fixture"}
+        try:
+            async def post_stream():
+                transport = httpx.ASGITransport(app=app)
+                async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+                    return await client.post("/api/analyze/stream", json={"github_url": "https://github.com/sample/project", "include_llm": False})
+            response = asyncio.run(post_stream())
+        finally:
+            analyze_route.repo_cloner.clone_repository, analyze_route.repo_cloner.cleanup_repo, analyze_route.github_metadata_service.fetch = originals
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertIn("text/event-stream", response.headers.get("content-type", ""))
+        for stage in ("fetch", "inventory", "metrics", "report", "complete"):
+            self.assertIn(f'"stage":"{stage}"', response.text)
+        self.assertIn('event: result', response.text)
+        self.assertIn('"schema_version":"1.3"', response.text)
+
 
 if __name__ == "__main__":
     unittest.main()
